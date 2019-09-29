@@ -1,0 +1,435 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>gain_calculator.core.classes &mdash; GainCalculator  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> GainCalculator
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../gain_calculator.html">gain_calculator package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GainCalculator</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>gain_calculator.core.classes</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for gain_calculator.core.classes</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">pfac</span> <span class="k">import</span> <span class="n">fac</span>
+
+
+<div class="viewcode-block" id="LevelTerm"><a class="viewcode-back" href="../../../gain_calculator.core.html#gain_calculator.core.classes.LevelTerm">[docs]</a><span class="k">class</span> <span class="nc">LevelTerm</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simple comparable data class representing a term of form 2p+(1)1</span>
+<span class="sd">    where the last number is 2*J (J = total angular momentum over all shells).</span>
+<span class="sd">    The rest of the shell notation is documented elsewhere.</span>
+
+<span class="sd">    :ivar shell: shell object instance</span>
+<span class="sd">    :ivar J2: double the value of total angular momentum</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shell</span><span class="p">,</span> <span class="n">J2</span><span class="p">):</span>  <span class="c1"># type: (Shell, int) -&gt; None</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Init using a shell and total angular momentum</span>
+<span class="sd">        :param shell: shell object instance</span>
+<span class="sd">        :param J2: double the value of total angular momentum</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell</span> <span class="o">=</span> <span class="n">shell</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">J2</span> <span class="o">=</span> <span class="n">J2</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># type: () -&gt; str</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shell</span><span class="p">)</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">J2</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>  <span class="c1"># type: (LevelTerm, LevelTerm) -&gt; bool</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span></div>
+
+
+<div class="viewcode-block" id="Shell"><a class="viewcode-back" href="../../../gain_calculator.core.html#gain_calculator.core.classes.Shell">[docs]</a><span class="k">class</span> <span class="nc">Shell</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class representing a single shell of form 3d+4(2), where 3 is the principal quantum number</span>
+<span class="sd">    d is the orbital quantum number (2) + represents spin direction (up),</span>
+<span class="sd">    4 is electron count and 2 is double the value of angular momentum of the shell.</span>
+
+<span class="sd">    :ivar principal_quantum_number: Starting from 1</span>
+<span class="sd">    :ivar orbital_quantum_number: Given by value, use Shell.orbital_numbers for convenience</span>
+<span class="sd">    :ivar spin_direction: expects &quot;+&quot; or &quot;-&quot; representing spin up and down</span>
+<span class="sd">    :ivar double_angular_momentum: 2*J value (of shell only) e.g. two electrons up give 2*J=2</span>
+<span class="sd">    :ivar electron_count: number of electrons in the shell</span>
+
+<span class="sd">    :cvar orbital_numbers: mapping of orbital letters to numbers</span>
+<span class="sd">    :cvar orbital_letters: inverse mapping to orbital numbers</span>
+<span class="sd">    :cvar spin_direction_sign: mapping from &quot;-&quot; to -1 and &quot;+&quot; to 1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">principal_quantum_number</span><span class="p">,</span> <span class="n">orbital_quantum_number</span><span class="p">,</span> <span class="n">spin_direction</span><span class="p">,</span>
+                 <span class="n">double_angular_momentum</span><span class="p">,</span> <span class="n">electron_count</span><span class="p">):</span>  <span class="c1"># type: (int, int, str, int, int) -&gt; None</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize it based on quantum numbers spin and electron count. Consider using</span>
+<span class="sd">        a factory method create from string for convenience.</span>
+<span class="sd">        :param principal_quantum_number: Starting from 1</span>
+<span class="sd">        :param orbital_quantum_number: Given by value, use Shell.orbital_numbers for convenience</span>
+<span class="sd">        :param spin_direction: expects &quot;+&quot; or &quot;-&quot; representing spin up and down</span>
+<span class="sd">        :param double_angular_momentum: 2*J value (of shell only) e.g. two electrons up give 2*J=2</span>
+<span class="sd">        :param electron_count: number of electrons in the shell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">principal_quantum_number</span> <span class="o">=</span> <span class="n">principal_quantum_number</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbital_quantum_number</span> <span class="o">=</span> <span class="n">orbital_quantum_number</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spin_direction</span> <span class="o">=</span> <span class="n">spin_direction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">double_angular_momentum</span> <span class="o">=</span> <span class="n">double_angular_momentum</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">electron_count</span> <span class="o">=</span> <span class="n">electron_count</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># type: () -&gt; str</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">principal_quantum_number</span><span class="p">)</span> <span class="o">+</span> \
+               <span class="bp">self</span><span class="o">.</span><span class="n">orbital_letters</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">orbital_quantum_number</span><span class="p">]</span> <span class="o">+</span> \
+               <span class="bp">self</span><span class="o">.</span><span class="n">spin_direction</span> <span class="o">+</span> \
+               <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">electron_count</span><span class="p">)</span> <span class="o">+</span> \
+               <span class="s2">&quot;(&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">double_angular_momentum</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_num_value</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">get_num_value</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__le__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_num_value</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">other</span><span class="o">.</span><span class="n">get_num_value</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__gt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">&lt;=</span> <span class="n">other</span>
+
+    <span class="k">def</span> <span class="nf">__ge__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">&lt;</span> <span class="n">other</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>  <span class="c1"># type: (Shell, Shell) -&gt; bool</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>  <span class="c1"># type: (Shell, Shell) -&gt; bool</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span>
+
+<div class="viewcode-block" id="Shell.get_latex_repr"><a class="viewcode-back" href="../../../gain_calculator.core.html#gain_calculator.core.classes.Shell.get_latex_repr">[docs]</a>    <span class="k">def</span> <span class="nf">get_latex_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># type: () -&gt; str</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method to generate shell representation in latex format</span>
+<span class="sd">        :return: Representation of Shell analogous to &quot;$[2p+]^4_0$&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;$[</span><span class="si">{}{}{}</span><span class="s2">]^</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">$&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">principal_quantum_number</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">orbital_letters</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">orbital_quantum_number</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">spin_direction</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">electron_count</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">double_angular_momentum</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Shell.get_num_value"><a class="viewcode-back" href="../../../gain_calculator.core.html#gain_calculator.core.classes.Shell.get_num_value">[docs]</a>    <span class="k">def</span> <span class="nf">get_num_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assigns shell(shallow - refer to shallow_compare) a numerical value to allow shallow comparision</span>
+<span class="sd">        :return: 100*n + 10*l + spin_sign (-1, 1), eg. 2p+ gives 211, 3d- gives 319</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">principal_quantum_number</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbital_quantum_number</span>
+        <span class="n">spin_sign</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spin_direction_sign</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">spin_direction</span><span class="p">]</span>
+        <span class="k">return</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">l</span> <span class="o">+</span> <span class="n">spin_sign</span></div>
+
+<div class="viewcode-block" id="Shell.shallow_compare"><a class="viewcode-back" href="../../../gain_calculator.core.html#gain_calculator.core.classes.Shell.shallow_compare">[docs]</a>    <span class="k">def</span> <span class="nf">shallow_compare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>  <span class="c1"># type: (Shell, Shell) -&gt; bool</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if the gives shells are shallow equal meaning 2p+3(1) == 2p+2(0) is true under shallow comparision</span>
+<span class="sd">        :param other: shell to compare with</span>
+<span class="sd">        :return: true if they shallow equal</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">other</span><span class="p">)[:</span><span class="mi">3</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Shell.create_from_string"><a class="viewcode-back" href="../../../gain_calculator.core.html#gain_calculator.core.classes.Shell.create_from_string">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">create_from_string</span><span class="p">(</span><span class="n">shell_repr</span><span class="p">):</span>  <span class="c1"># type: (str) -&gt; Shell</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Factory method to deconstruct a string of form 3d+4(2) and create a Shell instance based on it</span>
+<span class="sd">        :param shell_repr: string to deconstruct</span>
+<span class="sd">        :return: instance of Shell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Shell</span><span class="p">(</span>
+            <span class="n">principal_quantum_number</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">shell_repr</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="n">orbital_quantum_number</span><span class="o">=</span><span class="n">Shell</span><span class="o">.</span><span class="n">orbital_numbers</span><span class="p">[</span><span class="n">shell_repr</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+            <span class="n">spin_direction</span><span class="o">=</span><span class="n">shell_repr</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+            <span class="n">double_angular_momentum</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">shell_repr</span><span class="p">[</span><span class="mi">5</span><span class="p">]),</span>
+            <span class="n">electron_count</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">shell_repr</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+        <span class="p">)</span></div>
+
+    <span class="n">orbital_numbers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;p&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;f&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;g&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;h&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;i&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}</span>
+    <span class="n">orbital_letters</span> <span class="o">=</span> <span class="p">{</span><span class="n">number</span><span class="p">:</span> <span class="n">letter</span> <span class="k">for</span> <span class="n">letter</span><span class="p">,</span> <span class="n">number</span> <span class="ow">in</span> <span class="n">orbital_numbers</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span>
+    <span class="n">spin_direction_sign</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;+&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="EnergyLevel"><a class="viewcode-back" href="../../../gain_calculator.core.html#gain_calculator.core.classes.EnergyLevel">[docs]</a><span class="k">class</span> <span class="nc">EnergyLevel</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Comparable class representing a single energy level.</span>
+
+<span class="sd">        :ivar configuration: list of terms representing the full energy level configuration</span>
+<span class="sd">        :ivar total_angular_momentum: number representing 2*all the angular momentum added</span>
+<span class="sd">        :ivar relevant_terms: list of LevelTerm instances representing the whole configuration</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relevant_terms</span><span class="p">):</span>  <span class="c1"># type: (list) -&gt; None</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Init using list of instances of LevelTerm representing terms that are not closed</span>
+<span class="sd">        :param relevant_terms: list of LevelTerm instances</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relevant_terms</span> <span class="o">=</span> <span class="n">relevant_terms</span>  <span class="c1">#: terms giving the whole configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_angular_momentum</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">configuration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__generate_configuration</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># type: () -&gt; str</span>
+        <span class="k">return</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">term</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">shell</span><span class="p">)</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">J2</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">relevant_terms</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>  <span class="c1"># type: (EnergyLevel, EnergyLevel) -&gt; bool</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>  <span class="c1"># type: (EnergyLevel, EnergyLevel) -&gt; bool</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span>
+
+<div class="viewcode-block" id="EnergyLevel.create_from_string"><a class="viewcode-back" href="../../../gain_calculator.core.html#gain_calculator.core.classes.EnergyLevel.create_from_string">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">create_from_string</span><span class="p">(</span><span class="n">energy_level_repr</span><span class="p">):</span>  <span class="c1"># type: (str) -&gt; EnergyLevel</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Factory method deconstructing a string 2s+1(1)1.3d+3(3)4 into terms then generating closed configuration</span>
+<span class="sd">        up to last term and then replacing the proper terms in this configuration with relevant terms</span>
+<span class="sd">        :param energy_level_repr: string to deconstruct</span>
+<span class="sd">        :return: EnergyLevel instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">EnergyLevel</span><span class="p">(</span><span class="n">relevant_terms</span><span class="o">=</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">term_string</span><span class="p">:</span> <span class="n">LevelTerm</span><span class="p">(</span>
+            <span class="n">shell</span><span class="o">=</span><span class="n">Shell</span><span class="o">.</span><span class="n">create_from_string</span><span class="p">(</span><span class="n">term_string</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span>
+            <span class="n">J2</span><span class="o">=</span><span class="n">term_string</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="p">),</span> <span class="n">energy_level_repr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)))</span></div>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__get_shell_electron_count</span><span class="p">(</span><span class="n">orbital_quantum_number</span><span class="p">,</span> <span class="n">spin_direction</span><span class="p">):</span>  <span class="c1"># type: (int, str) -&gt; int</span>
+        <span class="n">j2</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">orbital_quantum_number</span> <span class="o">+</span> <span class="n">Shell</span><span class="o">.</span><span class="n">spin_direction_sign</span><span class="p">[</span><span class="n">spin_direction</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">j2</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__create_full_shell</span><span class="p">(</span><span class="n">principal_quantum_number</span><span class="p">,</span> <span class="n">orbital_quantum_number</span><span class="p">,</span> <span class="n">spin_direction</span><span class="p">):</span>
+        <span class="n">electron_count</span> <span class="o">=</span> <span class="n">EnergyLevel</span><span class="o">.</span><span class="n">__get_shell_electron_count</span><span class="p">(</span><span class="n">orbital_quantum_number</span><span class="p">,</span> <span class="n">spin_direction</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">electron_count</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">Shell</span><span class="p">(</span>
+            <span class="n">principal_quantum_number</span><span class="o">=</span><span class="n">principal_quantum_number</span><span class="p">,</span>
+            <span class="n">orbital_quantum_number</span><span class="o">=</span><span class="n">orbital_quantum_number</span><span class="p">,</span>
+            <span class="n">spin_direction</span><span class="o">=</span><span class="n">spin_direction</span><span class="p">,</span>
+            <span class="n">double_angular_momentum</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">electron_count</span><span class="o">=</span><span class="n">electron_count</span>
+        <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__get_orbital_numbers</span><span class="p">(</span><span class="n">principal_quantum_number</span><span class="p">):</span>  <span class="c1"># type: (int) -&gt; list</span>
+        <span class="k">return</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">principal_quantum_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">principal_quantum_number</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__generate_shells</span><span class="p">(</span><span class="n">principal_quantum_number</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">principal_quantum_number</span>
+        <span class="n">el</span> <span class="o">=</span> <span class="n">EnergyLevel</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">el</span><span class="o">.</span><span class="n">__create_full_shell</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">s_d</span><span class="p">)</span> <span class="k">for</span> <span class="n">s_d</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;+&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">el</span><span class="o">.</span><span class="n">__get_orbital_numbers</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__generate_closed_configuration</span><span class="p">(</span><span class="n">last_shell</span><span class="p">):</span>  <span class="c1"># type: (Shell) -&gt; list</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">last_shell</span><span class="o">.</span><span class="n">principal_quantum_number</span>
+        <span class="n">el</span> <span class="o">=</span> <span class="n">EnergyLevel</span>
+        <span class="n">shells</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">([</span><span class="n">el</span><span class="o">.</span><span class="n">__generate_shells</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+        <span class="n">shells</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">shell</span><span class="p">:</span> <span class="n">shell</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="n">shells</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">shell</span><span class="p">:</span> <span class="n">shell</span> <span class="o">&lt;=</span> <span class="n">last_shell</span><span class="p">,</span> <span class="n">shells</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__is_relevant</span><span class="p">(</span><span class="n">shell</span><span class="p">,</span> <span class="n">relevant_shell</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">relevant_shell</span><span class="o">.</span><span class="n">shallow_compare</span><span class="p">(</span><span class="n">shell</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__replace_relevant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shell</span><span class="p">):</span>
+        <span class="n">relevant_terms</span> <span class="o">=</span> <span class="p">[</span><span class="n">term</span> <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">relevant_terms</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__is_relevant</span><span class="p">(</span><span class="n">shell</span><span class="p">,</span> <span class="n">term</span><span class="o">.</span><span class="n">shell</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">relevant_terms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">shell</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">relevant_terms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">relevant_terms</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shell</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Duplicate relevant terms!&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__remap_total_angular_momentum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shell</span><span class="p">):</span>  <span class="c1"># type: (Shell) -&gt; LevelTerm</span>
+        <span class="c1"># TODO look into this, might be a mistake only adding angular momentum, is subtraction possible?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_angular_momentum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_angular_momentum</span> <span class="o">+</span> <span class="n">shell</span><span class="o">.</span><span class="n">double_angular_momentum</span>
+        <span class="k">return</span> <span class="n">LevelTerm</span><span class="p">(</span><span class="n">shell</span><span class="p">,</span> <span class="n">J2</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">total_angular_momentum</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__generate_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># type: () -&gt; tuple</span>
+        <span class="n">shells</span> <span class="o">=</span> <span class="n">EnergyLevel</span><span class="o">.</span><span class="n">__generate_closed_configuration</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relevant_terms</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shell</span><span class="p">)</span>
+        <span class="n">shells</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__replace_relevant</span><span class="p">,</span> <span class="n">shells</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_angular_momentum</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_angular_momentum</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__remap_total_angular_momentum</span><span class="p">,</span> <span class="n">shells</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Transition"><a class="viewcode-back" href="../../../gain_calculator.core.html#gain_calculator.core.classes.Transition">[docs]</a><span class="k">class</span> <span class="nc">Transition</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">):</span>  <span class="c1"># type: (EnergyLevel, EnergyLevel) -&gt; None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="o">=</span> <span class="n">lower</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upper</span> <span class="o">=</span> <span class="n">upper</span>
+
+<div class="viewcode-block" id="Transition.get_weighted_oscillator_strength"><a class="viewcode-back" href="../../../gain_calculator.core.html#gain_calculator.core.classes.Transition.get_weighted_oscillator_strength">[docs]</a>    <span class="k">def</span> <span class="nf">get_weighted_oscillator_strength</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Author
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
