@@ -36,11 +36,12 @@ class TestCoreClasses(unittest.TestCase):
 
     def test_transition_get_weighted_oscillator_strength(self):
         transition = core.Transition(
+            atom="Ge",
             lower=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(1)1 3s+1(1)2"),
             upper=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(6)1 3p+1(3)4")
         )
 
-        transition.get_weighted_oscillator_strength()
+        self.assertAlmostEqual(0.5119, transition.weighted_oscillator_strength, places=4)
 
     def test_energy_level_configuration(self):
         self.assertSequenceEqual([
@@ -51,6 +52,7 @@ class TestCoreClasses(unittest.TestCase):
             core.LevelTerm(shell=core.Shell.create_from_string("3s+1(1)"), j2=4)
 
         ], self.energy_level.configuration)
+
 
 if __name__ == '__main__':
     unittest.main()

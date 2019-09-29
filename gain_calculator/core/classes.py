@@ -101,6 +101,13 @@ class Shell:
             self.double_angular_momentum
         )
 
+    def is_full(self):
+        """
+        Returns true if there is maximum number of electrons in the shell
+        :return:
+        """
+        return self.electron_count == self.__get_max_electron_count()
+
     def __get_max_electron_count(self):
         j2 = 2 * self.l + Shell.spin_direction_sign[self.spin_direction]
         return j2 + 1
@@ -168,6 +175,23 @@ class EnergyLevel:
     def __ne__(self, other):  # type: (EnergyLevel, EnergyLevel) -> bool
         return not self == other
 
+    def get_fac_style_configuration(self):  # type: () -> str
+        """
+        Returns configuration with following notation 1[s+]2 2[p-]1 meaning 2 electrons in 1s+ and 1 in 2p-
+        :return: String of terms separated by space
+        """
+
+        def __generate_fac_string(term):  # type: (LevelTerm) -> str
+            shell = term.shell
+            return "{}[{}{}]{}".format(
+                shell.n,
+                Shell.orbital_letters[shell.l],
+                shell.spin_direction,
+                shell.electron_count
+            )
+
+        return " ".join(map(__generate_fac_string, self.configuration))
+
     @staticmethod
     def create_from_string(energy_level_repr):  # type: (str) -> EnergyLevel
         """
@@ -181,16 +205,58 @@ class EnergyLevel:
             j2=term_string[-1]
         ), energy_level_repr.split(" ")))
 
+    def get_fac_repr(self):
+        """
+        Returns a string of terms separated by dot. The terms are string representations of LevelTerm. Only terms
+        with shells that are not full are listed
+        :return:
+        """
+        return ".".join(map(lambda term: str(term), filter(lambda term: not term.shell.is_full(), self.configuration)))
+
 
 class Transition:
-    def __init__(self, lower, upper):  # type: (EnergyLevel, EnergyLevel) -> None
+    def __init__(self, atom, lower, upper):  # type: (str, EnergyLevel, EnergyLevel) -> None
         self.lower = lower
         self.upper = upper
+        self.atom = atom
+        self.weighted_oscillator_strength = self.__get_weighted_oscillator_strength()
 
-    def get_weighted_oscillator_strength(self):
-        fac.SetAtom('Fe')
-        fac.Config(self.lower.nonrelativistic_configuration, group='lower')
-        fac.Config(self.upper.nonrelativistic_configuration, group='upper')
+    @staticmethod
+    def __get_level_index(filename, energy_level):  # type: (str, EnergyLevel) -> int
+        level_name = energy_level.get_fac_repr()
+
+        correct_line = None
+        with open(filename, 'r') as levels_file:
+            for line in levels_file:
+                if level_name in line:
+                    correct_line = line
+                    break
+        assert correct_line is not None, "Could not find the energy level in file {}".format(filename)
+        match = re.search(r"\s*(?P<index>\d)", line)
+        if match is not None:
+            return int(match.group('index'))
+        else:
+            raise Exception("Failed to process line: {}".format(line))
+
+    def __parse_oscillator_strength(self, levels_filename, structure_filename):
+        lower_index = self.__get_level_index(filename=levels_filename, energy_level=self.lower)
+        upper_index = self.__get_level_index(filename=levels_filename, energy_level=self.upper)
+        with open(structure_filename, 'r') as structure_file:
+            for line in structure_file:
+                match = re.search(
+                    r"\s*(?P<upper_index>\d)\s+\d\s+(?P<lower_index>\d)\s+\d\s+[\d.+-E]*\s+(?P<strength>[\d.+-E]*)",
+                    line)
+                if (match is not None and
+                        int(match.group('lower_index')) == lower_index and
+                        int(match.group('upper_index')) == upper_index):
+                    return float(match.group('strength'))
+        raise Exception("Failed to find transition from level indexed {} to level indexed {} in file {}".format(
+            lower_index, upper_index, structure_filename))
+
+    def __get_weighted_oscillator_strength(self):
+        fac.SetAtom(self.atom)
+        fac.Config(self.lower.get_fac_style_configuration(), group='lower')
+        fac.Config(self.upper.get_fac_style_configuration(), group='upper')
         fac.ConfigEnergy(0)
         fac.OptimizeRadial(['lower', 'upper'])
         fac.ConfigEnergy(1)
@@ -200,3 +266,5 @@ class Transition:
 
         fac.TransitionTable('transitions.b', ['lower'], ['upper'])
         fac.PrintTable('transitions.b', 'transitions.txt', 1)
+
+        return self.__parse_oscillator_strength(levels_filename='levels.txt', structure_filename='transitions.txt')
