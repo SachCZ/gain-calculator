@@ -5,6 +5,7 @@ this in mind.
 """
 
 import re
+
 from pfac import fac
 
 
@@ -149,7 +150,6 @@ class EnergyLevel:
         Comparable class representing a single energy level.
 
         :ivar configuration: list of terms representing the full energy level configuration
-        :ivar nonrelativistic_configuration: string representing configuration in following form 1s2.2s2.2p6 etc.
     """
 
     def __init__(self, configuration):  # type: (list) -> None
@@ -158,7 +158,6 @@ class EnergyLevel:
         :param configuration: list of LevelTerm instances
         """
         self.configuration = configuration
-        self.nonrelativistic_configuration = self.__get_nonrelativistic_configuration()
 
     def __repr__(self):  # type: () -> str
         return " ".join(map(lambda term: str(term.shell) + str(term.j2), self.configuration))
@@ -181,39 +180,6 @@ class EnergyLevel:
             shell=Shell.create_from_string(term_string[:-1]),
             j2=term_string[-1]
         ), energy_level_repr.split(" ")))
-
-    def __get_nonrelativistic_configuration(self):
-        orbitals = [(n, self.__get_orbitals_by_principal(n)) for n in self.__get_principal_numbers()]
-        return " ".join([self.__get_shell_string(n, l) for n, orbital_numbers in orbitals for l in orbital_numbers])
-
-    def __get_shell_string(self, n, l):
-        electron_count = self.__get_shell_electrons(n, l)
-        orbital_letter = Shell.orbital_letters[l]
-        return "{}{}{}".format(n, orbital_letter, electron_count)
-
-    def __get_principal_numbers(self):
-        return sorted(set(map(lambda term: term.shell.n, self.configuration)))
-
-    def __get_orbitals_by_principal(self, n):
-        def __principal_equal(term):
-            return term.shell.n == n
-
-        def __get_orbital_number(term):
-            return term.shell.l
-
-        return sorted(set(map(__get_orbital_number, filter(__principal_equal, self.configuration))))
-
-    def __get_shell_electrons(self, n, l):
-        n = n
-        l = l
-
-        def __is_same(term):
-            return term.shell.n == n and term.shell.l == l
-
-        def __add_electrons(sum_so_far, right_term):  # type: (int, LevelTerm) -> int
-            return sum_so_far + right_term.shell.electron_count
-
-        return reduce(__add_electrons, filter(__is_same, self.configuration), 0)
 
 
 class Transition:

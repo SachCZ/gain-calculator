@@ -52,9 +52,5 @@ class TestCoreClasses(unittest.TestCase):
 
         ], self.energy_level.configuration)
 
-    def test_energy_level_nonrelativistic_configuration(self):
-        self.assertEqual("1s2 2s2 2p5 3s1", self.energy_level.nonrelativistic_configuration)
-
-
 if __name__ == '__main__':
     unittest.main()
