@@ -3,10 +3,8 @@ Module containing the core classes of the GainCalculator project. End user shoul
 A convention is used that principal quantum number is denoted n and orbital quantum number is denoted l, keep
 this in mind.
 """
-
 import re
-
-from pfac import fac
+import fac_helpers
 
 
 class LevelTerm:
@@ -215,56 +213,41 @@ class EnergyLevel:
 
 
 class Transition:
+    """
+    A class representing a Transition between two energy levels in a specific atom.
+
+    :ivar weighted_oscillator_strength: The weighted oscillator strength of the transition gf
+    """
+
     def __init__(self, atom, lower, upper):  # type: (str, EnergyLevel, EnergyLevel) -> None
+        """
+        Init using the the name of the atom given by string, eg. "Fe" and upper and lower EnergyLevel instances
+        :param atom: atom name such as Fe, Ge etc.
+        :param lower: lower energy level
+        :param upper: upper energy level
+        """
         self.lower = lower
         self.upper = upper
         self.atom = atom
         self.weighted_oscillator_strength = self.__get_weighted_oscillator_strength()
 
-    @staticmethod
-    def __get_level_index(filename, energy_level):  # type: (str, EnergyLevel) -> int
-        level_name = energy_level.get_fac_repr()
+    def __indexes_match_self(self, levels, lower_index, upper_index):
+        lower = levels[self.lower.get_fac_repr()]
+        upper = levels[self.upper.get_fac_repr()]
 
-        correct_line = None
-        with open(filename, 'r') as levels_file:
-            for line in levels_file:
-                if level_name in line:
-                    correct_line = line
-                    break
-        assert correct_line is not None, "Could not find the energy level in file {}".format(filename)
-        match = re.search(r"\s*(?P<index>\d)", line)
-        if match is not None:
-            return int(match.group('index'))
-        else:
-            raise Exception("Failed to process line: {}".format(line))
+        return lower == lower_index and upper == upper_index
 
-    def __parse_oscillator_strength(self, levels_filename, structure_filename):
-        lower_index = self.__get_level_index(filename=levels_filename, energy_level=self.lower)
-        upper_index = self.__get_level_index(filename=levels_filename, energy_level=self.upper)
-        with open(structure_filename, 'r') as structure_file:
-            for line in structure_file:
-                match = re.search(
-                    r"\s*(?P<upper_index>\d)\s+\d\s+(?P<lower_index>\d)\s+\d\s+[\d.+-E]*\s+(?P<strength>[\d.+-E]*)",
-                    line)
-                if (match is not None and
-                        int(match.group('lower_index')) == lower_index and
-                        int(match.group('upper_index')) == upper_index):
-                    return float(match.group('strength'))
-        raise Exception("Failed to find transition from level indexed {} to level indexed {} in file {}".format(
-            lower_index, upper_index, structure_filename))
+    def __parse_oscillator_strength(self):  # type: () -> float
+        with fac_helpers.Parser(self.atom, self.lower, self.upper) as fac_parser:
+            for lower_index, upper_index, strength in fac_parser.structure:
+                if self.__indexes_match_self(
+                        levels=fac_parser.levels,
+                        lower_index=lower_index,
+                        upper_index=upper_index
+                ):
+                    return strength
+
+        raise Exception("Failed to find transition!")
 
     def __get_weighted_oscillator_strength(self):
-        fac.SetAtom(self.atom)
-        fac.Config(self.lower.get_fac_style_configuration(), group='lower')
-        fac.Config(self.upper.get_fac_style_configuration(), group='upper')
-        fac.ConfigEnergy(0)
-        fac.OptimizeRadial(['lower', 'upper'])
-        fac.ConfigEnergy(1)
-        fac.Structure('levels.b', ['lower', 'upper'])
-        fac.MemENTable('levels.b')
-        fac.PrintTable('levels.b', 'levels.txt', 1)
-
-        fac.TransitionTable('transitions.b', ['lower'], ['upper'])
-        fac.PrintTable('transitions.b', 'transitions.txt', 1)
-
-        return self.__parse_oscillator_strength(levels_filename='levels.txt', structure_filename='transitions.txt')
+        return self.__parse_oscillator_strength()
