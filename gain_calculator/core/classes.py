@@ -3,8 +3,59 @@ Module containing the core classes of the GainCalculator project. End user shoul
 A convention is used that principal quantum number is denoted n and orbital quantum number is denoted l, keep
 this in mind.
 """
+
 import re
 import fac_helpers
+
+
+class Atom:
+    """
+    Represents an atom (given by symbol) with one arbitrarily excited electron from given base energy level.
+    It has a principal_number_threshold. The excited electron is expected to be in a layer given by the
+    principal_number_threshold or lower
+
+    :ivar symbol: atomic symbol, eq. Fe
+    :ivar base_level: the base energy level from which all excitation states are derived
+    """
+
+    def __init__(self, symbol, base_level):  # type: (str, EnergyLevel) -> None
+        self.symbol = symbol
+        self.base_level = base_level
+
+    def __repr__(self):
+        return " ".join([self.symbol, str(self.base_level)])
+
+    def get_possible_fac_configurations(self, principal_number_threshold):
+        """
+        Generate all possible fac configurations up to the principal_number_threshold indexed by maximum principal
+        quantum number, eg: {3: '1*2 2*7 3*1', 4: '1*2 2*7 4*1', 5: '1*2 2*7 5*1'}
+
+        :param principal_number_threshold: maximum principal_number_to_generate_configs
+        :return:
+        """
+        electron_counts = self.base_level.get_electron_counts()
+
+        base_group = self.__config_from_counts(electron_counts)
+
+        highest_n = max(electron_counts.keys())
+        electron_counts[highest_n] -= 1
+        base_string = self.__config_from_counts(electron_counts)
+
+        groups = {"group{}".format(new_n): base_string + " {}*1".format(new_n)
+                  for new_n in range(highest_n + 1, principal_number_threshold + 1)}
+        groups["base_group"] = base_group
+        return groups
+
+    def get_electron_count(self):
+        """
+        Counts the number of electrons in the Atom
+        :return: int representing the number of electrons
+        """
+        return self.base_level.get_electron_count()
+
+    @staticmethod
+    def __config_from_counts(electron_counts):
+        return " ".join(["{}*{}".format(n, electron_counts[n]) for n in electron_counts])
 
 
 class LevelTerm:
@@ -193,7 +244,7 @@ class EnergyLevel:
     @staticmethod
     def create_from_string(energy_level_repr):  # type: (str) -> EnergyLevel
         """
-        Factory method deconstructing a string 2s+1(1)1.3d+3(3)4 into terms then generating closed configuration
+        Factory method deconstructing a string 2s+1(1)1 3d+3(3)4 into terms then generating closed configuration
         up to last term and then replacing the proper terms in this configuration with relevant terms
         :param energy_level_repr: string to deconstruct
         :return: EnergyLevel instance
@@ -211,6 +262,33 @@ class EnergyLevel:
         """
         return ".".join(map(lambda term: str(term), filter(lambda term: not term.shell.is_full(), self.configuration)))
 
+    def get_electron_counts(self):  # type: () -> dict
+        """
+        Generate and return a dictionary containing electron counts indexed by their respective shell numbers,
+        eg. {2: 4} means 4 electrons in shell with principal quantum number equal to 2
+        :return: dictionary of electron counts
+        """
+        return {n: self.__get_shell_electrons(n) for n in self.__get_principal_numbers()}
+
+    def get_electron_count(self):  # type: () -> int
+        """
+        Return the total electron count
+        :return: int representing number of electrons
+        """
+        return sum(self.get_electron_counts().itervalues())
+
+    def __get_principal_numbers(self):
+        return sorted(set(map(lambda term: term.shell.n, self.configuration)))
+
+    def __get_shell_electrons(self, n):
+        def __is_same(term):
+            return term.shell.n == n
+
+        def __add_electrons(sum_so_far, right_term):  # type: (int, LevelTerm) -> int
+            return sum_so_far + right_term.shell.electron_count
+
+        return reduce(__add_electrons, filter(__is_same, self.configuration), 0)
+
 
 class Transition:
     """
@@ -219,7 +297,8 @@ class Transition:
     :ivar weighted_oscillator_strength: The weighted oscillator strength of the transition gf
     """
 
-    def __init__(self, atom, lower, upper):  # type: (str, EnergyLevel, EnergyLevel) -> None
+    def __init__(self, atom, lower, upper,
+                 principal_number_threshold):  # type: (Atom, EnergyLevel, EnergyLevel, int) -> None
         """
         Init using the the name of the atom given by string, eg. "Fe" and upper and lower EnergyLevel instances
         :param atom: atom name such as Fe, Ge etc.
@@ -229,23 +308,39 @@ class Transition:
         self.lower = lower
         self.upper = upper
         self.atom = atom
+        self.__fac_parser = fac_helpers.Parser(self.atom, principal_number_threshold)
         self.weighted_oscillator_strength = self.__get_weighted_oscillator_strength()
 
-    def __indexes_match_self(self, levels, lower_index, upper_index):
-        lower = levels[self.lower.get_fac_repr()]
-        upper = levels[self.upper.get_fac_repr()]
+    def get_populations(self, temperature, density):  # type: (float, float) -> {"lower": float, "upper": float}
+        """
+        Generate populations for all energy levels up to the highest energy shell with principal number equal
+        to principal_number_threshold and return the populations on upper and lower transition level
+        :param temperature: temperature in eV
+        :param density: electron density in cm^-3
+        :return: a dict with two keys: {upper: ..., lower: ...} - the values are the absolute population densities
+        """
+        populations = self.__fac_parser.get_all_populations(temperature=temperature, density=density)
+        return {
+            "lower": populations[self.__get_level_index(self.lower)],
+            "upper": populations[self.__get_level_index(self.upper)]
+        }
 
+    def __get_level_index(self, energy_level):  # type: (EnergyLevel) -> int
+        levels = self.__fac_parser.levels
+        return levels[energy_level.get_fac_repr()]
+
+    def __indexes_match_self(self, lower_index, upper_index):
+        lower = self.__get_level_index(self.lower)
+        upper = self.__get_level_index(self.upper)
         return lower == lower_index and upper == upper_index
 
     def __parse_oscillator_strength(self):  # type: () -> float
-        with fac_helpers.Parser(self.atom, self.lower, self.upper) as fac_parser:
-            for lower_index, upper_index, strength in fac_parser.structure:
-                if self.__indexes_match_self(
-                        levels=fac_parser.levels,
-                        lower_index=lower_index,
-                        upper_index=upper_index
-                ):
-                    return strength
+        for lower_index, upper_index, strength in self.__fac_parser.transitions:
+            if self.__indexes_match_self(
+                    lower_index=lower_index,
+                    upper_index=upper_index
+            ):
+                return strength
 
         raise Exception("Failed to find transition!")
 

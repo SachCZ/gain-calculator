@@ -4,14 +4,35 @@ import copy
 
 
 class TestCoreClasses(unittest.TestCase):
-    shell = core.Shell(
-        n=2,
-        l=1,
-        spin_direction="+",
-        double_angular_momentum=0,
-        electron_count=4
-    )
-    energy_level = core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4")
+    def setUp(self):
+        self.shell = core.Shell(
+            n=2,
+            l=1,
+            spin_direction="+",
+            double_angular_momentum=0,
+            electron_count=4
+        )
+        self.energy_level = core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4")
+        self.germanium = core.Atom(
+            symbol="Ge",
+            base_level=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+4(0)0"),
+        )
+        self.transition = core.Transition(
+            atom=self.germanium,
+            lower=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(1)1 3s+1(1)2"),
+            upper=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(6)1 3p+1(3)4"),
+            principal_number_threshold=8
+        )
+
+    def tearDown(self):
+        del self.shell
+        del self.energy_level
+        del self.germanium
+        del self.transition
+
+    def test_atom_get_possible_fac_configuration(self):
+        expected = {'group5': '1*2 2*7 5*1', 'group4': '1*2 2*7 4*1', 'group3': '1*2 2*7 3*1', 'base_group': '1*2 2*8'}
+        self.assertDictEqual(expected, self.germanium.get_possible_fac_configurations(5))
 
     def test_shell_string_init(self):
         another_shell = core.Shell.create_from_string("2p+4(0)")
@@ -35,13 +56,7 @@ class TestCoreClasses(unittest.TestCase):
         self.assertEqual("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4", str(self.energy_level))
 
     def test_transition_get_weighted_oscillator_strength(self):
-        transition = core.Transition(
-            atom="Ge",
-            lower=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(1)1 3s+1(1)2"),
-            upper=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(6)1 3p+1(3)4")
-        )
-
-        self.assertAlmostEqual(0.5119, transition.weighted_oscillator_strength, places=4)
+        self.assertAlmostEqual(0.5, self.transition.weighted_oscillator_strength, places=1)
 
     def test_energy_level_configuration(self):
         self.assertSequenceEqual([

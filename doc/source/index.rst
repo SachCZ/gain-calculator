@@ -8,9 +8,10 @@ Welcome to GainCalculator's documentation!
 
 .. toctree::
    :maxdepth: 4
-   :caption: Contents:
+   :titlesonly:
+   :caption: Modules API for developers
 
-   gain_calculator
+   api/gain_calculator
 
 
 Indices and tables
