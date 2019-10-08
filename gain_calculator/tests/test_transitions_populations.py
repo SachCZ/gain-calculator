@@ -12,9 +12,9 @@ if __name__ == "__main__":
     def get_population(density, temperature):
         return atom.get_population(
             energy_level=energy_level,
-            principal_number_threshold=6,
+            max_n=6,
             temperature=temperature,
-            density=density
+            electron_density=density
         ) / energy_level.get_degeneracy()
 
     for temp in [650, 850, 1050, 1250, 1450, 1650, 1850]:

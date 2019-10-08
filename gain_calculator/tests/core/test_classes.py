@@ -30,12 +30,16 @@ class TestShell(unittest.TestCase):
         another_shell = copy.deepcopy(self.shell)
         self.assertEqual(self.shell, another_shell)
 
+    def test_is_full(self):
+        self.assertEqual(True, self.shell.is_full())
+
 
 class TestAtom(unittest.TestCase):
     def setUp(self):
         self.atom = core.Atom(
             symbol="Ge",
-            base_level=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+4(0)0"),
+            config_groups=core.generate_config_groups("1*2 2*8", 3),
+            electron_count=10
         )
 
     def tearDown(self):
@@ -44,6 +48,17 @@ class TestAtom(unittest.TestCase):
     def test_get_possible_fac_configuration(self):
         expected = {'group5': '1*2 2*7 5*1', 'group4': '1*2 2*7 4*1', 'group3': '1*2 2*7 3*1', 'base_group0': '1*2 2*8'}
         self.assertDictEqual(expected, self.atom.get_possible_fac_configurations(5))
+
+    def test_get_population(self):
+        self.assertAlmostEqual(0.0071, self.atom.get_population(
+            energy_level=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4"),
+            max_n=3,
+            temperature=900,
+            electron_density=1e20,
+        ), places=4)
+
+    def test_electron_count(self):
+        self.assertEqual(10, self.atom.get_electron_count())
 
 
 class TestTransition(unittest.TestCase):
@@ -62,8 +77,17 @@ class TestTransition(unittest.TestCase):
     def tearDown(self):
         del self.transition
 
-    def test_transition_get_weighted_oscillator_strength(self):
-        self.assertAlmostEqual(0.5, self.transition.weighted_oscillator_strength, places=1)
+    def test_get_weighted_oscillator_strength(self):
+        self.assertAlmostEqual(0.52, self.transition.weighted_oscillator_strength, places=2)
+
+    def test_get_population(self):
+        expected = {"lower": 0.00056, "upper": 0.00295}
+        populations = self.transition.get_populations(
+            temperature=900,
+            electron_density=1e20
+        )
+        self.assertAlmostEqual(expected['lower'], populations['lower'], places=4)
+        self.assertAlmostEqual(expected['upper'], populations['upper'], places=4)
 
 
 class TestEnergyLevel(unittest.TestCase):
@@ -88,6 +112,19 @@ class TestEnergyLevel(unittest.TestCase):
             core.LevelTerm(shell=core.Shell.create_from_string("2p+3(3)"), j2=3),
             core.LevelTerm(shell=core.Shell.create_from_string("3s+1(1)"), j2=4)
         ], self.energy_level.configuration)
+
+    def test_get_degeneracy(self):
+        self.assertEqual(5, self.energy_level.get_degeneracy())
+
+    def test_get_electron_count(self):
+        self.assertEqual(10, self.energy_level.get_electron_count())
+
+    def test_get_electron_counts(self):
+        expected = {1: 2, 2: 7, 3: 1}
+        self.assertDictEqual(expected, self.energy_level.get_electron_counts())
+
+    def test_get_fac_repr(self):
+        self.assertEqual("2p+3(3)3.3s+1(1)4", self.energy_level.get_fac_repr())
 
 
 if __name__ == '__main__':

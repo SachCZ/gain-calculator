@@ -8,62 +8,67 @@ import re
 import fac_helpers
 
 
-class Atom:
-    """
-    Represents an atom (given by symbol) with one arbitrarily excited electron from given base energy level.
-    It has a max_n. The excited electron is expected to be in a layer given by the
-    max_n or lower
-
-    :ivar symbol: atomic symbol, eq. Fe
-    :ivar base_level: the base energy level from which all excitation states are derived
-    """
-
-    def __init__(self, symbol, base_level):  # type: (str, EnergyLevel) -> None
-        self.symbol = symbol
-        self.base_level = base_level
+class ConfigGroup:
+    def __init__(self, index, config):  # type: (int, str) -> None
+        self.index = index
+        self.config = config
 
     def __repr__(self):
-        return " ".join([self.symbol, str(self.base_level)])
+        return "[{}]".format(self.index) + self.config
 
-    def get_possible_fac_configurations(self, max_n):
+    def get_name(self):
+        return "group" + str(self.index)
+
+
+class ConfigGroups:
+    def __init__(self, all_groups, base_group): # type: (set, ConfigGroup) -> None
+        self.all_groups = all_groups
+        self.base_group = base_group
+
+    def get_names(self):
+        return [group.get_name() for group in self.all_groups]
+
+    def get_max_n(self):
+        return max([group.index for group in self.all_groups])
+
+
+def generate_config_groups(base, max_n): # type: (str, int) -> ConfigGroups
+    """
+    Returns all possible most general configs up to max_n base on base.
+    Base must look like analogous to this: 1*2 2*8 3*1.
+    The result is then
+    generate_config_groups("1*2 2*8 3*1", 4) -> {ConfigGroup(0, "1*2 2*8 3*1"), ConfigGroup(4, "1*2 2*8 3*1 4*1")}
+    :param base:
+    :param max_n:
+    :return:
+    """
+    begin_n = int(base[-3])
+    groups = {ConfigGroup(n, base + " {}*1".format(n)) for n in range(begin_n + 1, max_n + 1)} | {ConfigGroup(0, base)}
+    return ConfigGroups(all_groups=groups, base_group=ConfigGroup(0, base))
+
+
+class Atom:
+    def __init__(self, symbol, config_groups, electron_count):  # type: (str, ConfigGroups, int) -> None
+        self.symbol = symbol
+        self.config_groups = config_groups
+        self.electron_count = electron_count
+
+    def __repr__(self):
+        return " ".join([self.symbol, str(self.config_groups.base_group)])
+
+    def get_population(self, energy_level, temperature, electron_density, population_total=1.0):
         """
-        Generate all possible fac configurations up to the max_n indexed by maximum principal
-        quantum number, eg: {3: '1*2 2*7 3*1', 4: '1*2 2*7 4*1', 5: '1*2 2*7 5*1'}
-
-        :param max_n: maximum principal_number_to_generate_configs
-        :return:
+        Get population on single energy level at given temperature and electron density. Population
+        total is the sum of populations of all energy levels. By default this is 1 and the function returns relative
+        populations.
+        :param energy_level: the energy level instance
+        :param temperature: temperature in eV
+        :param electron_density: electron density in cm^-3
+        :param population_total: 1 by default
+        :return: energy level population
         """
-        electron_counts = self.base_level.get_electron_counts()
-
-        base_group = self.__config_from_counts(electron_counts)
-
-        highest_n = max(electron_counts.keys())
-        electron_counts[highest_n] -= 1
-        base_string = self.__config_from_counts(electron_counts)
-
-        groups = {"group{}".format(new_n): base_string + " {}*1".format(new_n)
-                  for new_n in range(highest_n + 1, max_n + 1)}
-        groups["base_group0"] = base_group
-        return groups
-
-    def get_electron_count(self):
-        """
-        Counts the number of electrons in the Atom
-        :return: int representing the number of electrons
-        """
-        return self.base_level.get_electron_count()
-
-    def get_population(self, energy_level, max_n, temperature, density, population_total=1.0):
-        fac_parser = fac_helpers.Parser(self, max_n)
-        populations = fac_parser.get_all_populations(temperature, density, population_total)
-
-        levels = fac_parser.levels
-        index = levels[energy_level.get_fac_repr()]
-        return populations[index]
-
-    @staticmethod
-    def __config_from_counts(electron_counts):
-        return " ".join(["{}*{}".format(n, electron_counts[n]) for n in electron_counts])
+        fac_parser = fac_helpers.Parser(self)
+        return fac_parser.get_population(energy_level, temperature, electron_density, population_total)
 
 
 class LevelTerm:
@@ -234,26 +239,9 @@ class EnergyLevel:
 
     def get_degeneracy(self):  # type: () -> int
         """
-        Read and return the degeneracy (g) of the level
+        Read and return the degeneracy (g) of the level (2J + 1)
         """
         return self.configuration[-1].j2 + 1
-
-    def get_fac_style_configuration(self):  # type: () -> str
-        """
-        Returns configuration with following notation 1[s+]2 2[p-]1 meaning 2 electrons in 1s+ and 1 in 2p-
-        :return: String of terms separated by space
-        """
-
-        def __generate_fac_string(term):  # type: (LevelTerm) -> str
-            shell = term.shell
-            return "{}[{}{}]{}".format(
-                shell.n,
-                Shell.orbital_letters[shell.l],
-                shell.spin_direction,
-                shell.electron_count
-            )
-
-        return " ".join(map(__generate_fac_string, self.configuration))
 
     @staticmethod
     def create_from_string(energy_level_repr):  # type: (str) -> EnergyLevel
@@ -274,7 +262,7 @@ class EnergyLevel:
         with shells that are not full are listed
         :return:
         """
-        return ".".join(map(lambda term: str(term), filter(lambda term: not term.shell.is_full(), self.configuration)))
+        return ".".join([str(term) for term in self.configuration if not term.shell.is_full()])
 
     def get_electron_counts(self):  # type: () -> dict
         """
@@ -325,15 +313,15 @@ class Transition:
         self.__fac_parser = fac_helpers.Parser(self.atom, max_n)
         self.weighted_oscillator_strength = self.__fac_parser.get_weighted_oscillator_strength(lower, upper)
 
-    def get_populations(self, temperature, density,
-                        population_total=1):  # type: (float, float, float) -> {"lower": float, "upper": float}
+    def get_populations(self, temperature, electron_density, population_total=1.0):
+        # type: (float, float, float) -> {"lower": float, "upper": float}
         """
         Generate populations for all energy levels up to the highest energy shell with principal number equal
         to max_n and return the populations on upper and lower transition level
         :param population_total: Sum of populations over all energy levels
         :param temperature: temperature in eV
-        :param density: electron density in cm^-3
+        :param electron_density: electron density in cm^-3
         :return: a dict with two keys: {upper: ..., lower: ...} - the values are the absolute population densities
         """
-        return {"lower": self.__fac_parser.get_population(self.lower, temperature, density, population_total),
-                "upper": self.__fac_parser.get_population(self.upper, temperature, density, population_total)}
+        return {"lower": self.__fac_parser.get_population(self.lower, temperature, electron_density, population_total),
+                "upper": self.__fac_parser.get_population(self.upper, temperature, electron_density, population_total)}

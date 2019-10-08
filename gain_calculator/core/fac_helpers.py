@@ -2,8 +2,8 @@
 Module containing useful abstractions to encapsulate FAC
 """
 import itertools
-import os
 import re
+import os
 from pfac import fac
 from pfac import crm
 import classes
@@ -17,17 +17,14 @@ class Parser(object):
     :ivar levels: FAC levels file represented as dict {name: index, ...}
     """
 
-    def __init__(self, atom, max_n):  # type: (classes.Atom, int) -> None
+    def __init__(self, atom):  # type: (classes.Atom) -> None
         """
         Initialize the Parser using an atom with given maximal principal quantum number (n)
         :param atom: Atom instance
-        :param max_n: maximum n to which configurations will be generated when calculating
-            populations
         """
 
         self.__initialize_fac()
         self.__atom = atom
-        self.__max_n = max_n
 
         if self.__is_serialized():
             self.__init_from_cache()
@@ -62,7 +59,7 @@ class Parser(object):
         return self.__parse_oscillator_strength(lower, upper)
 
     def __get_dir_name(self):
-        return "-".join([str(self.__atom), str(self.__max_n)])
+        return "-".join([str(self.__atom), str(self.__atom.config_groups.get_max_n())])
 
     def __create_dir(self):
         dir_name = self.__get_dir_name()
@@ -95,7 +92,7 @@ class Parser(object):
     def __generate_populations(self, temperature, density, population_total):  # type: (float, float, float) -> None
 
         # Keeping this in one method as I find it easier to manage FAC in one place
-        electron_count = self.__atom.get_electron_count()
+        electron_count = self.__atom.electron_count
         crm.ReinitCRM()
         crm.NormalizeMode(1)
         crm.AddIon(electron_count, 0, self.__binary_filename)
@@ -162,6 +159,8 @@ class Parser(object):
 
     @staticmethod
     def __generate_group_combinations(groups):
+        # TODO rewrite this - create config_group __gt__ etc
+
         group_combinations = list(itertools.combinations_with_replacement(groups, 2))
 
         def __fix_invalid(combination):
@@ -184,10 +183,10 @@ class Parser(object):
 
     def __generate_files(self):  # type: () -> None
         fac.SetAtom(self.__atom.symbol)
-        possible_configurations = self.__atom.get_possible_fac_configurations(self.__max_n)
-        self.__configure_ion(possible_configurations)
+        config_groups = self.__atom.config_groups
+        self.__configure_ion(config_groups)
 
-        groups = possible_configurations.keys()
+        groups = config_groups.get_names()
 
         self.__generate_structure(groups)
         self.__generate_transitions(groups)
@@ -210,12 +209,12 @@ class Parser(object):
         return self.__get_dir_name() in os.listdir(self.__fac_temp_folder)
 
     @staticmethod
-    def __configure_ion(possible_configurations):
-        for group in possible_configurations:
-            fac.Config(group, possible_configurations[group])
+    def __configure_ion(config_groups):  # type: (classes.ConfigGroups) -> None
+        for config_group in config_groups.all_groups:
+            fac.Config(config_group.get_name(), config_group.config)
 
         fac.ConfigEnergy(0)
-        fac.OptimizeRadial(['base_group0'])
+        fac.OptimizeRadial(config_groups.base_group.get_group_name())
         fac.ConfigEnergy(1)
 
     @staticmethod
@@ -256,4 +255,3 @@ class Parser(object):
             density=density,
             population_total=population_total)
         return populations[self.__get_level_index(energy_level)]
-

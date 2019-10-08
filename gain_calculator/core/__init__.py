@@ -7,3 +7,6 @@ from classes import Shell
 from classes import LevelTerm
 from classes import Transition
 from classes import Atom
+from classes import generate_config_groups
+from classes import ConfigGroups
+from classes import ConfigGroup
