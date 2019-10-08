@@ -2,7 +2,7 @@
 Module containing useful abstractions to encapsulate FAC
 """
 import itertools
-import os, sys
+import os
 import re
 from pfac import fac
 from pfac import crm
@@ -17,17 +17,17 @@ class Parser(object):
     :ivar levels: FAC levels file represented as dict {name: index, ...}
     """
 
-    def __init__(self, atom, principal_number_threshold):  # type: (classes.Atom, int) -> None
+    def __init__(self, atom, max_n):  # type: (classes.Atom, int) -> None
         """
         Initialize the Parser using an atom with given maximal principal quantum number (n)
         :param atom: Atom instance
-        :param principal_number_threshold: maximum n to which configurations will be generated when calculating
+        :param max_n: maximum n to which configurations will be generated when calculating
             populations
         """
 
         self.__initialize_fac()
         self.__atom = atom
-        self.__principal_number_threshold = principal_number_threshold
+        self.__max_n = max_n
 
         if self.__is_serialized():
             self.__init_from_cache()
@@ -36,22 +36,33 @@ class Parser(object):
 
     __fac_temp_folder = os.path.join(os.path.abspath(os.path.dirname(__file__)), "fac_temp")
 
-    def get_all_populations(self, temperature, density):  # type: (float, float) -> dict
+    def get_all_populations(self, temperature, density, population_total):  # type: (float, float, float) -> dict
         """
-        Generate all level populations in given atom with principal_number_threshold using temperature and density
+        Generate all level populations in given atom with max_n using temperature and density
         as params
+        :param population_total: The sum of all populations over all levels
         :param temperature: temperature of plasma in eV
         :param density: density of plasma in cm^-3
         :return: returns a dict of populations indexed by energy level index, eg. {0: 0.25e-3, 1: 0.33e-4, ...}
         """
 
-        self.__generate_populations(temperature=temperature, density=density)
+        self.__generate_populations(temperature=temperature, density=density, population_total=population_total)
         populations = self.__parse_population_file()
         self.__clean_population_files()
         return populations
 
+    def get_weighted_oscillator_strength(self, lower, upper):
+        # type: (classes.EnergyLevel, classes.EnergyLevel) -> float
+        """
+        Calculate the weighted oscillator strength (gf) between two energy levels
+        :param lower: lower EnergyLevel instance
+        :param upper: upper EnergyLevel instance
+        :return: weighted oscillator strength value
+        """
+        return self.__parse_oscillator_strength(lower, upper)
+
     def __get_dir_name(self):
-        return "-".join([str(self.__atom), str(self.__principal_number_threshold)])
+        return "-".join([str(self.__atom), str(self.__max_n)])
 
     def __create_dir(self):
         dir_name = self.__get_dir_name()
@@ -81,23 +92,23 @@ class Parser(object):
         os.remove(self.__spec_binary_filename)
         os.remove(self.__spec_filename)
 
-    def __generate_populations(self, temperature, density):  # type: (float, float) -> None
+    def __generate_populations(self, temperature, density, population_total):  # type: (float, float, float) -> None
+
+        # Keeping this in one method as I find it easier to manage FAC in one place
         electron_count = self.__atom.get_electron_count()
-        dens = density * 1e-10
-
         crm.ReinitCRM()
-
-        crm.AddIon(electron_count, 0.0, self.__binary_filename)
+        crm.NormalizeMode(1)
+        crm.AddIon(electron_count, 0, self.__binary_filename)
         crm.SetBlocks(-1)
 
+        crm.SetAbund(electron_count, population_total)
+        crm.SetEleDensity(density * 1e-10)
         crm.SetEleDist(0, temperature, -1, -1)
         crm.SetTRRates(0)
         crm.SetCERates(1)
-        crm.SetAbund(electron_count, 1.0)
-        crm.SetEleDensity(dens)
 
         crm.InitBlocks()
-        crm.SetIteration(1e-6, 0.5)
+        crm.SetIteration(1e-4, 0.5, 1500)
 
         crm.LevelPopulation()
 
@@ -149,26 +160,37 @@ class Parser(object):
         fac.MemENTable(self.__levels_binary_filename)
         fac.PrintTable(self.__levels_binary_filename, self.__levels_filename, 1)
 
-    def __generate_transitions(self, group_combinations):
-        for group_combination in group_combinations:
+    @staticmethod
+    def __generate_group_combinations(groups):
+        group_combinations = list(itertools.combinations_with_replacement(groups, 2))
+
+        def __fix_invalid(combination):
+            if int(combination[0][-1]) > int(combination[1][-1]):
+                return combination[1], combination[0]
+            else:
+                return combination
+
+        return map(__fix_invalid, group_combinations)
+
+    def __generate_transitions(self, groups):
+        for group_combination in self.__generate_group_combinations(groups):
             fac.TransitionTable(self.__transitions_binary_filename, group_combination[0], group_combination[1])
         fac.PrintTable(self.__transitions_binary_filename, self.__transitions_filename, 1)
 
     def __generate_excitation(self, groups):
-        for group in groups:
-            fac.CETable(self.__excitation_binary_filename, "base_group", group)
+        for group_combination in self.__generate_group_combinations(groups):
+            fac.CETable(self.__excitation_binary_filename, group_combination[0], group_combination[1])
         fac.PrintTable(self.__excitation_binary_filename, self.__excitation_filename, 1)
 
     def __generate_files(self):  # type: () -> None
         fac.SetAtom(self.__atom.symbol)
-        possible_configurations = self.__atom.get_possible_fac_configurations(self.__principal_number_threshold)
+        possible_configurations = self.__atom.get_possible_fac_configurations(self.__max_n)
         self.__configure_ion(possible_configurations)
 
         groups = possible_configurations.keys()
-        group_combinations = list(itertools.combinations_with_replacement(groups, 2))
 
         self.__generate_structure(groups)
-        self.__generate_transitions(group_combinations)
+        self.__generate_transitions(groups)
         self.__generate_excitation(groups)
 
     def __init(self):
@@ -193,9 +215,45 @@ class Parser(object):
             fac.Config(group, possible_configurations[group])
 
         fac.ConfigEnergy(0)
-        fac.OptimizeRadial(['base_group'])
+        fac.OptimizeRadial(['base_group0'])
         fac.ConfigEnergy(1)
 
     @staticmethod
     def __initialize_fac():
         fac.Reinit(0)
+
+    def __get_level_index(self, energy_level):  # type: (classes.EnergyLevel) -> int
+        return self.levels[energy_level.get_fac_repr()]
+
+    def __indexes_match(self, lower_index, upper_index, lower_level, upper_level):
+        #  type: (int, int, classes.EnergyLevel, classes.EnergyLevel) -> bool
+        lower = self.__get_level_index(lower_level)
+        upper = self.__get_level_index(upper_level)
+        return lower == lower_index and upper == upper_index
+
+    def __parse_oscillator_strength(self, lower_level, upper_level):
+        # type: (classes.EnergyLevel, classes.EnergyLevel) -> float
+        for lower_index, upper_index, strength in self.transitions:
+            if self.__indexes_match(lower_index, upper_index, lower_level, upper_level):
+                return strength
+
+        raise Exception("Failed to find transition!")
+
+    def get_population(self, energy_level, temperature, density, population_total):
+        #  type: (classes.EnergyLevel, float, float, float) -> float
+        """
+        Calculate population of a single energy level at given temperature density with population total stating
+        the sum of all energy levels.
+
+        :param energy_level:
+        :param temperature: temperature in eV
+        :param density: electron density in cm^-3
+        :param population_total:
+        :return:
+        """
+        populations = self.get_all_populations(
+            temperature=temperature,
+            density=density,
+            population_total=population_total)
+        return populations[self.__get_level_index(energy_level)]
+
