@@ -34,38 +34,50 @@ class TestShell(unittest.TestCase):
         self.assertEqual(True, self.shell.is_full())
 
 
+class TestConfigGroups(unittest.TestCase):
+    def setUp(self):
+        self.config_groups = core.ConfigGroups(base="1*2 2*8", max_n=5)
+
+    def tearDown(self):
+        del self.config_groups
+
+    def test_all_groups(self):
+        expected = {core.ConfigGroup(5, '1*2 2*7 5*1'),
+                    core.ConfigGroup(4, '1*2 2*7 4*1'),
+                    core.ConfigGroup(3, '1*2 2*7 3*1'),
+                    core.ConfigGroup(0, '1*2 2*8')}
+
+        self.assertSetEqual(expected, self.config_groups.all_groups)
+
+    def test_base_group(self):
+        self.assertEqual(core.ConfigGroup(0, '1*2 2*8'), self.config_groups.base_group)
+
+
 class TestAtom(unittest.TestCase):
     def setUp(self):
         self.atom = core.Atom(
             symbol="Ge",
-            config_groups=core.generate_config_groups("1*2 2*8", 3),
+            config_groups=core.ConfigGroups(base="1*2 2*8", max_n=3),
             electron_count=10
         )
 
     def tearDown(self):
         del self.atom
 
-    def test_get_possible_fac_configuration(self):
-        expected = {'group5': '1*2 2*7 5*1', 'group4': '1*2 2*7 4*1', 'group3': '1*2 2*7 3*1', 'base_group0': '1*2 2*8'}
-        self.assertDictEqual(expected, self.atom.get_possible_fac_configurations(5))
-
     def test_get_population(self):
         self.assertAlmostEqual(0.0071, self.atom.get_population(
             energy_level=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4"),
-            max_n=3,
             temperature=900,
             electron_density=1e20,
         ), places=4)
-
-    def test_electron_count(self):
-        self.assertEqual(10, self.atom.get_electron_count())
 
 
 class TestTransition(unittest.TestCase):
     def setUp(self):
         atom = core.Atom(
             symbol="Ge",
-            base_level=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+4(0)0"),
+            config_groups=core.ConfigGroups(base="1*2 2*8", max_n=3),
+            electron_count=10
         )
         self.transition = core.Transition(
             atom=atom,
@@ -115,13 +127,6 @@ class TestEnergyLevel(unittest.TestCase):
 
     def test_get_degeneracy(self):
         self.assertEqual(5, self.energy_level.get_degeneracy())
-
-    def test_get_electron_count(self):
-        self.assertEqual(10, self.energy_level.get_electron_count())
-
-    def test_get_electron_counts(self):
-        expected = {1: 2, 2: 7, 3: 1}
-        self.assertDictEqual(expected, self.energy_level.get_electron_counts())
 
     def test_get_fac_repr(self):
         self.assertEqual("2p+3(3)3.3s+1(1)4", self.energy_level.get_fac_repr())

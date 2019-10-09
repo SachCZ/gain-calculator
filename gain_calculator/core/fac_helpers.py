@@ -214,7 +214,7 @@ class Parser(object):
             fac.Config(config_group.get_name(), config_group.config)
 
         fac.ConfigEnergy(0)
-        fac.OptimizeRadial(config_groups.base_group.get_group_name())
+        fac.OptimizeRadial(config_groups.base_group.get_name())
         fac.ConfigEnergy(1)
 
     @staticmethod

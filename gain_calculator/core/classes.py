@@ -14,37 +14,40 @@ class ConfigGroup:
         self.config = config
 
     def __repr__(self):
-        return "[{}]".format(self.index) + self.config
+        return "[{}] ".format(self.index) + self.config
+
+    def __eq__(self, other):
+        return self.index == other.index and self.config == other.config
+
+    def __hash__(self):
+        return hash(str(self))
 
     def get_name(self):
         return "group" + str(self.index)
 
 
 class ConfigGroups:
-    def __init__(self, all_groups, base_group): # type: (set, ConfigGroup) -> None
-        self.all_groups = all_groups
-        self.base_group = base_group
+    def __init__(self, base, max_n):  # type: (str, int) -> ConfigGroups
+        """
+        Generates all possible most general configs up to max_n base on base.
+        Base must look like analogous to this: 1*2 2*8 3*1.
+        The result is then
+        generate_config_groups("1*2 2*8 3*1", 4) -> {ConfigGroup(0, "1*2 2*8 3*1"), ConfigGroup(4, "1*2 2*8 3*1 4*1")}
+        :param base:
+        :param max_n:
+        :return:
+        """
+        self.base_group = ConfigGroup(0, base)
+        begin_n = int(base[-3])
+        base = base[:-1] + str(int(base[-1]) - 1)  # Subtract one from the last number in string
+        self.all_groups = {ConfigGroup(n, base + " {}*1".format(n)) for n in range(begin_n + 1, max_n + 1)}
+        self.all_groups.add(self.base_group)
 
     def get_names(self):
         return [group.get_name() for group in self.all_groups]
 
     def get_max_n(self):
         return max([group.index for group in self.all_groups])
-
-
-def generate_config_groups(base, max_n): # type: (str, int) -> ConfigGroups
-    """
-    Returns all possible most general configs up to max_n base on base.
-    Base must look like analogous to this: 1*2 2*8 3*1.
-    The result is then
-    generate_config_groups("1*2 2*8 3*1", 4) -> {ConfigGroup(0, "1*2 2*8 3*1"), ConfigGroup(4, "1*2 2*8 3*1 4*1")}
-    :param base:
-    :param max_n:
-    :return:
-    """
-    begin_n = int(base[-3])
-    groups = {ConfigGroup(n, base + " {}*1".format(n)) for n in range(begin_n + 1, max_n + 1)} | {ConfigGroup(0, base)}
-    return ConfigGroups(all_groups=groups, base_group=ConfigGroup(0, base))
 
 
 class Atom:
@@ -264,21 +267,6 @@ class EnergyLevel:
         """
         return ".".join([str(term) for term in self.configuration if not term.shell.is_full()])
 
-    def get_electron_counts(self):  # type: () -> dict
-        """
-        Generate and return a dictionary containing electron counts indexed by their respective shell numbers,
-        eg. {2: 4} means 4 electrons in shell with principal quantum number equal to 2
-        :return: dictionary of electron counts
-        """
-        return {n: self.__get_shell_electrons(n) for n in self.__get_principal_numbers()}
-
-    def get_electron_count(self):  # type: () -> int
-        """
-        Return the total electron count
-        :return: int representing number of electrons
-        """
-        return sum(self.get_electron_counts().itervalues())
-
     def __get_principal_numbers(self):
         return sorted(set(map(lambda term: term.shell.n, self.configuration)))
 
@@ -310,7 +298,7 @@ class Transition:
         self.lower = lower
         self.upper = upper
         self.atom = atom
-        self.__fac_parser = fac_helpers.Parser(self.atom, max_n)
+        self.__fac_parser = fac_helpers.Parser(self.atom)
         self.weighted_oscillator_strength = self.__fac_parser.get_weighted_oscillator_strength(lower, upper)
 
     def get_populations(self, temperature, electron_density, population_total=1.0):
