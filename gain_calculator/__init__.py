@@ -2,4 +2,4 @@
 Package for gain calculations
 """
 
-from core import Transition, EnergyLevel, Atom
+from core import Transition, EnergyLevel, Atom, ConfigGroups

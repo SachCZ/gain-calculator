@@ -10,6 +10,8 @@ Welcome to GainCalculator's documentation!
    :maxdepth: 4
    :caption: For users
 
+   users/getting_started
+   users/usage_examples
    users/api
 
 .. toctree::

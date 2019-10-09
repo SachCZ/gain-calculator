@@ -37,18 +37,34 @@ class ConfigGroup:
     def get_name(self):
         return "group" + str(self.index)
 
+    def get_electron_count(self):
+        return sum([int(electrons) for electrons in re.findall(r'\*(\d+?)', self.config)])
+
 
 class ConfigGroups:
+    """
+    This class represents a set of all  possible shell configurations up to max_n concerning only the
+    number of electrons in each shell given by principal quantum number n. There is no end user use of this
+    class aside from providing its instance as a param to other classes. Initialize it like this::
+
+        ConfigGroups(
+            base="1*2 2*8",
+            max_n=4
+        )
+
+    :param str base: The base configuration from which all config groups are generated. Notation "1*2 2*8" means there
+        are 2 electron in shell with :math:`n=1` and 8 electrons in shell with :math:`n=2`. Notation with asterisks
+        and spaces must be used at all times.
+    :param int max_n: Maximal principal quantum number :math:`n` up to which
+        ConfigGroups are represented::
+
+            ConfigGroups(base=1*2 2*8, max_n=4)
+
+        represents::
+
+            ["1*2 2*8", "1*2 2*7 3*1", "1*2 2*7 4*1"]
+    """
     def __init__(self, base, max_n):  # type: (str, int) -> ConfigGroups
-        """
-        Generates all possible most general configs up to max_n base on base.
-        Base must look like analogous to this: 1*2 2*8 3*1.
-        The result is then
-        generate_config_groups("1*2 2*8 3*1", 4) -> {ConfigGroup(0, "1*2 2*8 3*1"), ConfigGroup(4, "1*2 2*8 3*1 4*1")}
-        :param base:
-        :param max_n:
-        :return:
-        """
         self.base_group = ConfigGroup(0, base)
         begin_n = int(base[-3])
         base = base[:-1] + str(int(base[-1]) - 1)  # Subtract one from the last number in string
@@ -63,24 +79,54 @@ class ConfigGroups:
 
 
 class Atom:
-    def __init__(self, symbol, config_groups, electron_count):  # type: (str, ConfigGroups, int) -> None
+    """
+    This class represents a specific atom with given configuration. Initialize it like this::
+
+        Atom(
+            symbol="Fe",
+            config_groups=ConfigGroups(
+                base="1*2 2*8",
+                max_n=4
+            )
+        )
+
+    :param str symbol: A symbol of the element, eg. "Ge" for germanium
+    :param ConfigGroups config_groups: Instance of class ConfigGroups representing possible shell configurations.
+        For more info see :class:`ConfigGroups`.
+    """
+    def __init__(self, symbol, config_groups):  # type: (str, ConfigGroups) -> None
         self.symbol = symbol
         self.config_groups = config_groups
-        self.electron_count = electron_count
+        self.electron_count = config_groups.base_group.get_electron_count()
 
     def __repr__(self):
         return " ".join([self.symbol, str(self.config_groups.base_group)])
 
     def get_population(self, energy_level, temperature, electron_density, population_total=1.0):
         """
-        Get population on single energy level at given temperature and electron density. Population
+        Get electron population on single energy level at given temperature and electron density.
+        The calculation is done for all energy levels in given atom. Population
         total is the sum of populations of all energy levels. By default this is 1 and the function returns relative
-        populations.
-        :param energy_level: the energy level instance
-        :param temperature: temperature in eV
-        :param electron_density: electron density in cm^-3
-        :param population_total: 1 by default
-        :return: energy level population
+        populations. Eg. 0.1 means 10% of all electrons are at energy_level. Example usage::
+
+            atom = Atom(
+                symbol="Fe",
+                config_groups=ConfigGroups(
+                    base="1*2 2*8",
+                    max_n=4
+                )
+            )
+            population = atom.get_population(
+                energy_level=EnergyLevel(config="1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4"),
+                temperature=900.0  # eV
+                electron_density=1e20  # cm^-3
+            )
+
+        :param EnergyLevel energy_level: the energy level instance
+        :param float temperature: temperature in eV
+        :param float electron_density: electron density in cm^-3
+        :param float population_total: 1 by default
+        :return: energy level electron population normalized by population_total
         """
         fac_parser = fac_helpers.Parser(self)
         return fac_parser.get_population(energy_level, temperature, electron_density, population_total)
@@ -231,22 +277,28 @@ class Shell:
 
 class EnergyLevel:
     """
-        Comparable class representing a single energy level.
+    This class represents a single energy level.
+    Initialize it like this::
 
-        :ivar configuration: list of terms representing the full energy level configuration
+        EnergyLevel(config="1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4")
+
+    :param str config: A sequence of terms separated by space each representing single shell in jj coupling
+        notation. A shell 5p+3(1)2 has principal quantum number :math:`n=5`, orbital quantum number :math:`l = p`.
+        There are three electrons in this shell. The number in brackets is 2 times the total
+        angular momentum :math:`2J`. Here :math:`2J` is 2 hence :math:`J` is :math:`\\frac{1}{2}`.
+        The last number is 2 times total angular momentum when taking into account all previous
+        shells here it is 2 meaning total angular momentum of the whole configuration up to this shell is 1.
+
+    :ivar int degeneracy: A number representing the degeneracy of the level. It is usually denoted :math:`g`.
     """
 
     def __init__(self, config):  # type: (str) -> None
-        """
-        Factory method deconstructing a string 2s+1(1)1 3d+3(3)4 into terms then generating closed configuration
-        up to last term and then replacing the proper terms in this configuration with relevant terms
-        :param config: string to deconstruct
-        :return: EnergyLevel instance
-        """
         self.configuration = map(lambda term_string: LevelTerm(
             shell=Shell.create_from_string(term_string[:-1]),
             j2=int(term_string[-1])
         ), config.split(" "))
+
+        self.degeneracy = self.configuration[-1].j2 + 1
 
     def __repr__(self):  # type: () -> str
         return " ".join(map(lambda term: str(term.shell) + str(term.j2), self.configuration))
@@ -257,12 +309,6 @@ class EnergyLevel:
     def __ne__(self, other):  # type: (EnergyLevel, EnergyLevel) -> bool
         return not self == other
 
-    def get_degeneracy(self):  # type: () -> int
-        """
-        Read and return the degeneracy (g) of the level (2J + 1)
-        """
-        return self.configuration[-1].j2 + 1
-
     def get_fac_repr(self):
         """
         Returns a string of terms separated by dot. The terms are string representations of LevelTerm. Only terms
@@ -271,34 +317,34 @@ class EnergyLevel:
         """
         return ".".join([str(term) for term in self.configuration if not term.shell.is_full()])
 
-    def __get_principal_numbers(self):
-        return sorted(set(map(lambda term: term.shell.n, self.configuration)))
-
-    def __get_shell_electrons(self, n):
-        def __is_same(term):
-            return term.shell.n == n
-
-        def __add_electrons(sum_so_far, right_term):  # type: (int, LevelTerm) -> int
-            return sum_so_far + right_term.shell.electron_count
-
-        return reduce(__add_electrons, filter(__is_same, self.configuration), 0)
-
 
 class Transition:
     """
-    A class representing a Transition between two energy levels in a specific atom.
+    This class represents a transition between upper and lower energy levels.
+    Initialize it like this::
 
-    :ivar weighted_oscillator_strength: The weighted oscillator strength of the transition gf
+        atom = Atom(
+            symbol="Fe",
+            config_groups=ConfigGroups(
+                base="1*2 2*8",
+                max_n=4
+            )
+        )
+        Transition(
+            atom=atom,
+            lower=core.EnergyLevel("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(1)1 3s+1(1)2"),
+            upper=core.EnergyLevel("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(6)1 3p+1(3)4")
+        )
+
+    :param Atom atom: The atom instance in which te transition occurs
+    :param EnergyLevel lower: The lower energy level
+    :param EnergyLevel upper: The upper energy level
+
+    :ivar float weighted_oscillator_strength: The weighted oscillator strength of the transition :math:`gf`.
     """
 
     def __init__(self, atom, lower, upper):
         # type: (Atom, EnergyLevel, EnergyLevel) -> None
-        """
-        Init using the the name of the atom given by string, eg. "Fe" and upper and lower EnergyLevel instances
-        :param atom: atom name such as Fe, Ge etc.
-        :param lower: lower energy level
-        :param upper: upper energy level
-        """
         self.lower = lower
         self.upper = upper
         self.atom = atom
@@ -308,12 +354,16 @@ class Transition:
     def get_populations(self, temperature, electron_density, population_total=1.0):
         # type: (float, float, float) -> {"lower": float, "upper": float}
         """
-        Generate populations for all energy levels up to the highest energy shell with principal number equal
-        to max_n and return the populations on upper and lower transition level
-        :param population_total: Sum of populations over all energy levels
-        :param temperature: temperature in eV
-        :param electron_density: electron density in cm^-3
-        :return: a dict with two keys: {upper: ..., lower: ...} - the values are the absolute population densities
+        Simple convenience wrapper around
+        :func:`EnergyLevel.get_population`
+        to get both lower and upper energy
+        levels populations.
+
+        :param float temperature: temperature in eV
+        :param float electron_density: electron density in cm^-3
+        :param float population_total: 1 by default
+        :return: a dict with two keys: {upper: ..., lower: ...} - the values are the populations normalized by
+            population_total
         """
         return {"lower": self.__fac_parser.get_population(self.lower, temperature, electron_density, population_total),
                 "upper": self.__fac_parser.get_population(self.upper, temperature, electron_density, population_total)}

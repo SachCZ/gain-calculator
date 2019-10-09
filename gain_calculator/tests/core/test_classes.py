@@ -52,13 +52,15 @@ class TestConfigGroups(unittest.TestCase):
     def test_base_group(self):
         self.assertEqual(core.ConfigGroup(0, '1*2 2*8'), self.config_groups.base_group)
 
+    def test_base_group_electron_count(self):
+        self.assertEqual(10, self.config_groups.base_group.get_electron_count())
+
 
 class TestAtom(unittest.TestCase):
     def setUp(self):
         self.atom = core.Atom(
             symbol="Ge",
             config_groups=core.ConfigGroups(base="1*2 2*8", max_n=3),
-            electron_count=10
         )
 
     def tearDown(self):
@@ -77,7 +79,6 @@ class TestTransition(unittest.TestCase):
         atom = core.Atom(
             symbol="Ge",
             config_groups=core.ConfigGroups(base="1*2 2*8", max_n=3),
-            electron_count=10
         )
         self.transition = core.Transition(
             atom=atom,
@@ -125,7 +126,7 @@ class TestEnergyLevel(unittest.TestCase):
         ], self.energy_level.configuration)
 
     def test_get_degeneracy(self):
-        self.assertEqual(5, self.energy_level.get_degeneracy())
+        self.assertEqual(5, self.energy_level.degeneracy)
 
     def test_get_fac_repr(self):
         self.assertEqual("2p+3(3)3.3s+1(1)4", self.energy_level.get_fac_repr())
