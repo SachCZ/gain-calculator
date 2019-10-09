@@ -66,7 +66,7 @@ class TestAtom(unittest.TestCase):
 
     def test_get_population(self):
         self.assertAlmostEqual(0.0071, self.atom.get_population(
-            energy_level=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4"),
+            energy_level=core.EnergyLevel("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4"),
             temperature=900,
             electron_density=1e20,
         ), places=4)
@@ -81,8 +81,8 @@ class TestTransition(unittest.TestCase):
         )
         self.transition = core.Transition(
             atom=atom,
-            lower=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(1)1 3s+1(1)2"),
-            upper=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(6)1 3p+1(3)4"),
+            lower=core.EnergyLevel("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(1)1 3s+1(1)2"),
+            upper=core.EnergyLevel("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(6)1 3p+1(3)4"),
         )
 
     def tearDown(self):
@@ -103,7 +103,7 @@ class TestTransition(unittest.TestCase):
 
 class TestEnergyLevel(unittest.TestCase):
     def setUp(self):
-        self.energy_level = core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4")
+        self.energy_level = core.EnergyLevel("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4")
 
     def tearDown(self):
         del self.energy_level

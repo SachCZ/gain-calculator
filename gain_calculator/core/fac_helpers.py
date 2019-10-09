@@ -158,27 +158,26 @@ class Parser(object):
         fac.PrintTable(self.__levels_binary_filename, self.__levels_filename, 1)
 
     @staticmethod
-    def __generate_group_combinations(groups):
-        # TODO rewrite this - create config_group __gt__ etc
-
-        group_combinations = list(itertools.combinations_with_replacement(groups, 2))
+    def __generate_group_combinations(config_groups):  # type: (classes.ConfigGroups) -> list
+        group_combinations = list(itertools.combinations_with_replacement(config_groups.all_groups, 2))
 
         def __fix_invalid(combination):
-            if int(combination[0][-1]) > int(combination[1][-1]):
-                return combination[1], combination[0]
+            first, second = combination
+            if first > second:
+                return second, first
             else:
                 return combination
 
         return map(__fix_invalid, group_combinations)
 
-    def __generate_transitions(self, groups):
-        for group_combination in self.__generate_group_combinations(groups):
-            fac.TransitionTable(self.__transitions_binary_filename, group_combination[0], group_combination[1])
+    def __generate_transitions(self, group_combinations):
+        for lower, upper in group_combinations:
+            fac.TransitionTable(self.__transitions_binary_filename, lower.get_name(), upper.get_name())
         fac.PrintTable(self.__transitions_binary_filename, self.__transitions_filename, 1)
 
-    def __generate_excitation(self, groups):
-        for group_combination in self.__generate_group_combinations(groups):
-            fac.CETable(self.__excitation_binary_filename, group_combination[0], group_combination[1])
+    def __generate_excitation(self, group_combinations):
+        for lower, upper in group_combinations:
+            fac.CETable(self.__excitation_binary_filename, lower.get_name(), upper.get_name())
         fac.PrintTable(self.__excitation_binary_filename, self.__excitation_filename, 1)
 
     def __generate_files(self):  # type: () -> None
@@ -186,11 +185,12 @@ class Parser(object):
         config_groups = self.__atom.config_groups
         self.__configure_ion(config_groups)
 
-        groups = config_groups.get_names()
+        group_names = config_groups.get_names()
+        group_combinations = self.__generate_group_combinations(config_groups)
 
-        self.__generate_structure(groups)
-        self.__generate_transitions(groups)
-        self.__generate_excitation(groups)
+        self.__generate_structure(group_names)
+        self.__generate_transitions(group_combinations)
+        self.__generate_excitation(group_combinations)
 
     def __init(self):
         self.__dir_name = self.__create_dir()

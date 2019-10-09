@@ -19,6 +19,18 @@ class ConfigGroup:
     def __eq__(self, other):
         return self.index == other.index and self.config == other.config
 
+    def __lt__(self, other):
+        return self.index < other.index
+
+    def __le__(self, other):
+        return self.index <= other.index
+
+    def __gt__(self, other):
+        return self.index > other.index
+
+    def __ge__(self, other):
+        return self.index >= other.index
+
     def __hash__(self):
         return hash(str(self))
 
@@ -224,12 +236,17 @@ class EnergyLevel:
         :ivar configuration: list of terms representing the full energy level configuration
     """
 
-    def __init__(self, configuration):  # type: (list) -> None
+    def __init__(self, config):  # type: (str) -> None
         """
-        Init using list of instances of LevelTerm representing the whole configuration
-        :param configuration: list of LevelTerm instances
+        Factory method deconstructing a string 2s+1(1)1 3d+3(3)4 into terms then generating closed configuration
+        up to last term and then replacing the proper terms in this configuration with relevant terms
+        :param config: string to deconstruct
+        :return: EnergyLevel instance
         """
-        self.configuration = configuration
+        self.configuration = map(lambda term_string: LevelTerm(
+            shell=Shell.create_from_string(term_string[:-1]),
+            j2=int(term_string[-1])
+        ), config.split(" "))
 
     def __repr__(self):  # type: () -> str
         return " ".join(map(lambda term: str(term.shell) + str(term.j2), self.configuration))
@@ -245,19 +262,6 @@ class EnergyLevel:
         Read and return the degeneracy (g) of the level (2J + 1)
         """
         return self.configuration[-1].j2 + 1
-
-    @staticmethod
-    def create_from_string(energy_level_repr):  # type: (str) -> EnergyLevel
-        """
-        Factory method deconstructing a string 2s+1(1)1 3d+3(3)4 into terms then generating closed configuration
-        up to last term and then replacing the proper terms in this configuration with relevant terms
-        :param energy_level_repr: string to deconstruct
-        :return: EnergyLevel instance
-        """
-        return EnergyLevel(configuration=map(lambda term_string: LevelTerm(
-            shell=Shell.create_from_string(term_string[:-1]),
-            j2=int(term_string[-1])
-        ), energy_level_repr.split(" ")))
 
     def get_fac_repr(self):
         """

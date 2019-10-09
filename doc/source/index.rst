@@ -8,8 +8,14 @@ Welcome to GainCalculator's documentation!
 
 .. toctree::
    :maxdepth: 4
+   :caption: For users
+
+   users/api
+
+.. toctree::
+   :maxdepth: 4
    :titlesonly:
-   :caption: Modules API for developers
+   :caption: For developers
 
    api/gain_calculator
 
