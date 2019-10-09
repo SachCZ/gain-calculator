@@ -83,7 +83,6 @@ class TestTransition(unittest.TestCase):
             atom=atom,
             lower=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(1)1 3s+1(1)2"),
             upper=core.EnergyLevel.create_from_string("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(6)1 3p+1(3)4"),
-            max_n=3
         )
 
     def tearDown(self):

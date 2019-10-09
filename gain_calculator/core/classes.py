@@ -287,8 +287,8 @@ class Transition:
     :ivar weighted_oscillator_strength: The weighted oscillator strength of the transition gf
     """
 
-    def __init__(self, atom, lower, upper, max_n):
-        # type: (Atom, EnergyLevel, EnergyLevel, int) -> None
+    def __init__(self, atom, lower, upper):
+        # type: (Atom, EnergyLevel, EnergyLevel) -> None
         """
         Init using the the name of the atom given by string, eg. "Fe" and upper and lower EnergyLevel instances
         :param atom: atom name such as Fe, Ge etc.
