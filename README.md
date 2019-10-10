@@ -4,8 +4,8 @@
 
 This Python 2 package is a wrapper around the Flexible Atomic Code - 
 [FAC](https://github.com/flexible-atomic-code/fac). It aims to greatly simplify the
-calculation of gain based on atomic data provided by
-[FAC](https://github.com/flexible-atomic-code/fac) and given state variables. 
+calculation of gain based state variables and atomic data provided by
+[FAC](https://github.com/flexible-atomic-code/fac). 
 
 ## Dependencies
 A dependency that is not installed during the installation of this package is the
@@ -30,6 +30,4 @@ To install the package simply run:
 
 The usage of this package is demonstrated with following example:
 
-For more examples please refer to the examples section in documentation.
-The whole documentation consisting of getting started, more usage examples and
-API reference can be found [here](#)
+To get started or to see more examples please refer to the [documentation]().
