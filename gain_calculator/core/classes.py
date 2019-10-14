@@ -3,8 +3,14 @@ Module containing the core classes of the GainCalculator project. End user shoul
 A convention is used that principal quantum number is denoted n and orbital quantum number is denoted l, keep
 this in mind.
 """
-
+import multiprocessing
 import re
+
+import numpy as np
+import itertools
+
+import typing
+
 import fac_helpers
 
 
@@ -64,6 +70,7 @@ class ConfigGroups:
 
             ["1*2 2*8", "1*2 2*7 3*1", "1*2 2*7 4*1"]
     """
+
     def __init__(self, base, max_n):  # type: (str, int) -> ConfigGroups
         self.base_group = ConfigGroup(0, base)
         begin_n = int(base[-3])
@@ -76,6 +83,17 @@ class ConfigGroups:
 
     def get_max_n(self):
         return max([group.index for group in self.all_groups])
+
+
+def get_population_wrapper(inputs):
+    self, energy_level, pair, population_total = inputs
+    temperature, electron_density = pair
+    return self.get_population(
+        energy_level=energy_level,
+        temperature=temperature,
+        electron_density=electron_density,
+        population_total=population_total
+    )
 
 
 class Atom:
@@ -94,6 +112,7 @@ class Atom:
     :param ConfigGroups config_groups: Instance of class ConfigGroups representing possible shell configurations.
         For more info see :class:`ConfigGroups`.
     """
+
     def __init__(self, symbol, config_groups):  # type: (str, ConfigGroups) -> None
         self.symbol = symbol
         self.config_groups = config_groups
@@ -102,7 +121,7 @@ class Atom:
     def __repr__(self):
         return " ".join([self.symbol, str(self.config_groups.base_group)])
 
-    def get_population(self, energy_level, temperature, electron_density, population_total=1.0):
+    def get_populations(self, energy_level, temperatures, electron_densities, population_total=1.0):
         """
         Get electron population on single energy level at given temperature and electron density.
         The calculation is done for all energy levels in given atom. Population
@@ -123,11 +142,39 @@ class Atom:
             )
 
         :param EnergyLevel energy_level: the energy level instance
-        :param float temperature: temperature in eV
-        :param float electron_density: electron density in cm^-3
+        :param float temperatures: temperature in eV (could be iterable)
+        :param float electron_densities: electron density in cm^-3 (could be iterable)
         :param float population_total: 1 by default
         :return: energy level electron population normalized by population_total
         """
+        temperatures = (np.asarray(temperatures) if
+                        isinstance(temperatures, typing.Iterable) else np.asarray([temperatures]))
+        electron_densities = (np.asanyarray(electron_densities) if
+                              isinstance(electron_densities, typing.Iterable) else np.asarray([electron_densities]))
+
+        pairs = list(itertools.product(temperatures, electron_densities))
+
+        pool = multiprocessing.Pool()
+
+        prepared_inputs = zip(
+            itertools.repeat(self),
+            itertools.repeat(energy_level),
+            pairs,
+            itertools.repeat(population_total)
+        )
+        populations = pool.map(get_population_wrapper, prepared_inputs)
+
+        def _create_dict(pair, population):
+            temperature, electron_density = pair
+            return {
+                "temperature": temperature,
+                "electron_density": electron_density,
+                "population": population
+            }
+
+        return [_create_dict(pair, population) for pair, population in zip(pairs, populations)]
+
+    def get_population(self, energy_level, temperature, electron_density, population_total):
         fac_parser = fac_helpers.Parser(self)
         return fac_parser.get_population(energy_level, temperature, electron_density, population_total)
 

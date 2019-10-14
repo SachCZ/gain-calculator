@@ -4,6 +4,8 @@ Module containing useful abstractions to encapsulate FAC
 import itertools
 import re
 import os
+import uuid
+
 from pfac import fac
 from pfac import crm
 import classes
@@ -43,6 +45,7 @@ class Parser(object):
         :return: returns a dict of populations indexed by energy level index, eg. {0: 0.25e-3, 1: 0.33e-4, ...}
         """
 
+        self.__choose_population_filenames()
         self.__generate_populations(temperature=temperature, density=density, population_total=population_total)
         populations = self.__parse_population_file()
         self.__clean_population_files()
@@ -78,16 +81,19 @@ class Parser(object):
         self.__hamiltonian_binary_filename = self.__binary_filename + ".ham"
         self.__levels_binary_filename = self.__binary_filename + ".en"
         self.__transitions_binary_filename = self.__binary_filename + ".tr"
-        self.__spec_binary_filename = self.__binary_filename + ".sp"
 
         self.__levels_filename = os.path.join(self.__dir_name, "levels.txt")
         self.__excitation_filename = os.path.join(self.__dir_name, "excitation.txt")
         self.__transitions_filename = os.path.join(self.__dir_name, "transitions.txt")
-        self.__spec_filename = os.path.join(self.__dir_name, "populations.txt")
 
     def __clean_population_files(self):
         os.remove(self.__spec_binary_filename)
         os.remove(self.__spec_filename)
+
+    def __choose_population_filenames(self):
+        name = uuid.uuid4().hex[:6].upper()
+        self.__spec_binary_filename = name + ".sp"
+        self.__spec_filename = name + ".txt"
 
     def __generate_populations(self, temperature, density, population_total):  # type: (float, float, float) -> None
 
