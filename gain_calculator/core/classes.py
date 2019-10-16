@@ -3,15 +3,21 @@ Module containing the core classes of the GainCalculator project. End user shoul
 A convention is used that principal quantum number is denoted n and orbital quantum number is denoted l, keep
 this in mind.
 """
-import multiprocessing
 import re
 
 import numpy as np
 import itertools
-
+import ray
 import typing
+import fac_wrapper
 
-import fac_helpers
+
+def init():
+    """
+    Must be called anytime you want to use gain_calculator, preferably in main calling script
+    """
+    if not ray.is_initialized():
+        ray.init(log_to_driver=True)
 
 
 class ConfigGroup:
@@ -117,13 +123,16 @@ class Atom:
         self.symbol = symbol
         self.config_groups = config_groups
         self.electron_count = config_groups.base_group.get_electron_count()
+        files = fac_wrapper.generate_files(self)
+        self.__parser = fac_wrapper.Parser.remote(files, self.electron_count)
 
     def __repr__(self):
         return " ".join([self.symbol, str(self.config_groups.base_group)])
 
     def get_populations(self, energy_level, temperatures, electron_densities, population_total=1.0):
         """
-        Get electron population on single energy level at given temperature and electron density.
+        Get electron population on single energy level at given temperature and electron density given by arrays/lists.
+        The calculation will be done over cartesian product of those arrays/lists.
         The calculation is done for all energy levels in given atom. Population
         total is the sum of populations of all energy levels. By default this is 1 and the function returns relative
         populations. Eg. 0.1 means 10% of all electrons are at energy_level. Example usage::
@@ -135,48 +144,51 @@ class Atom:
                     max_n=4
                 )
             )
-            population = atom.get_population(
+            result = atom.get_population(
                 energy_level=EnergyLevel(config="1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4"),
-                temperature=900.0  # eV
-                electron_density=1e20  # cm^-3
+                temperatures=[900.0, 1000.0]  # eV
+                electron_densities=[1e20, 1e21]  # cm^-3
             )
+            result["population"]  # this is an array of populations,
+            len(result["population"]) == 4  # True
 
         :param EnergyLevel energy_level: the energy level instance
-        :param float temperatures: temperature in eV (could be iterable)
-        :param float electron_densities: electron density in cm^-3 (could be iterable)
+        :param ndarray temperatures: temperature in eV (could be iterable)
+        :param ndarray electron_densities: electron density in cm^-3 (could be iterable)
         :param float population_total: 1 by default
-        :return: energy level electron population normalized by population_total
+        :return: numpy structured array with named fields **population**, **electron_density** and temperature**
         """
         temperatures = (np.asarray(temperatures) if
                         isinstance(temperatures, typing.Iterable) else np.asarray([temperatures]))
         electron_densities = (np.asanyarray(electron_densities) if
                               isinstance(electron_densities, typing.Iterable) else np.asarray([electron_densities]))
 
+        ray_ids = []
         pairs = list(itertools.product(temperatures, electron_densities))
 
-        pool = multiprocessing.Pool()
+        for temperature, electron_density in pairs:
+            ray_ids.append(self.get_population_ray_id(
+                energy_level=energy_level,
+                temperature=temperature,
+                electron_density=electron_density,
+                population_total=population_total
+            ))
+        populations = [ray.get(_id) for _id in ray_ids]
 
-        prepared_inputs = zip(
-            itertools.repeat(self),
-            itertools.repeat(energy_level),
-            pairs,
-            itertools.repeat(population_total)
-        )
-        populations = pool.map(get_population_wrapper, prepared_inputs)
-
-        def _create_dict(pair, population):
+        def __create_tuple(pair, population):
             temperature, electron_density = pair
-            return {
-                "temperature": temperature,
-                "electron_density": electron_density,
-                "population": population
-            }
+            return (
+                temperature,
+                electron_density,
+                population
+            )
 
-        return [_create_dict(pair, population) for pair, population in zip(pairs, populations)]
+        return np.array([__create_tuple(pair, population) for pair, population in zip(pairs, populations)],
+                        dtype=[("temperature", float), ("electron_density", float), ("population", float)])
 
-    def get_population(self, energy_level, temperature, electron_density, population_total):
-        fac_parser = fac_helpers.Parser(self)
-        return fac_parser.get_population(energy_level, temperature, electron_density, population_total)
+    def get_population_ray_id(self, energy_level, temperature, electron_density, population_total):
+        ray_id = self.__parser.get_population.remote(energy_level, temperature, electron_density, population_total)
+        return ray_id
 
 
 class LevelTerm:
@@ -395,10 +407,11 @@ class Transition:
         self.lower = lower
         self.upper = upper
         self.atom = atom
-        self.__fac_parser = fac_helpers.Parser(self.atom)
-        self.weighted_oscillator_strength = self.__fac_parser.get_weighted_oscillator_strength(lower, upper)
+        self.__fac_parser = fac_wrapper.Parser.remote(fac_wrapper.generate_files(atom), atom.electron_count)
+        self.weighted_oscillator_strength = ray.get(
+            self.__fac_parser.get_weighted_oscillator_strength.remote(lower, upper))
 
-    def get_populations(self, temperature, electron_density, population_total=1.0):
+    def get_populations(self, temperatures, electron_densities, population_total=1.0):
         # type: (float, float, float) -> {"lower": float, "upper": float}
         """
         Simple convenience wrapper around
@@ -406,11 +419,11 @@ class Transition:
         to get both lower and upper energy
         levels populations.
 
-        :param float temperature: temperature in eV
-        :param float electron_density: electron density in cm^-3
+        :param ndarray temperatures: temperature in eV
+        :param ndarray electron_densities: electron density in cm^-3
         :param float population_total: 1 by default
-        :return: a dict with two keys: {upper: ..., lower: ...} - the values are the populations normalized by
-            population_total
+        :return: a dict with two keys: {upper: ..., lower: ...} - the values are numpy structured arrays
+            with fields **temperature**, **electron_density** and **population**
         """
-        return {"lower": self.__fac_parser.get_population(self.lower, temperature, electron_density, population_total),
-                "upper": self.__fac_parser.get_population(self.upper, temperature, electron_density, population_total)}
+        return {"lower": self.atom.get_populations(self.lower, temperatures, electron_densities, population_total),
+                "upper": self.atom.get_populations(self.upper, temperatures, electron_densities, population_total)}

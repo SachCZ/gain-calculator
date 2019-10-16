@@ -7,10 +7,12 @@ more code examples please visit :ref:`usage-examples`.
 
 The API consists of several classes listed below:
 
+.. autofunction:: gain_calculator.init
+
 .. autoclass:: gain_calculator.EnergyLevel
 
 .. autoclass:: gain_calculator.Atom
-    :members: get_population
+    :members: get_populations
 
 .. autoclass:: gain_calculator.ConfigGroups
 

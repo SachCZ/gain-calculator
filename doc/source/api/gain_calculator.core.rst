@@ -13,5 +13,4 @@ Submodules
 .. toctree::
 
    gain_calculator.core.classes
-   gain_calculator.core.fac_helpers
 

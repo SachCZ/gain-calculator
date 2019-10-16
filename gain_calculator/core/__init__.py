@@ -9,3 +9,4 @@ from classes import Transition
 from classes import Atom
 from classes import ConfigGroups
 from classes import ConfigGroup
+from classes import init

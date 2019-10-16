@@ -58,6 +58,7 @@ class TestConfigGroups(unittest.TestCase):
 
 class TestAtom(unittest.TestCase):
     def setUp(self):
+        core.init()
         self.atom = core.Atom(
             symbol="Ge",
             config_groups=core.ConfigGroups(base="1*2 2*8", max_n=3),
@@ -67,15 +68,16 @@ class TestAtom(unittest.TestCase):
         del self.atom
 
     def test_get_population(self):
-        self.assertAlmostEqual(0.0071, self.atom.get_population(
+        self.assertAlmostEqual(0.0071, self.atom.get_populations(
             energy_level=core.EnergyLevel("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4"),
-            temperature=900,
-            electron_density=1e20,
-        ), places=4)
+            temperatures=900,
+            electron_densities=1e20,
+        )["population"][0], places=4)
 
 
 class TestTransition(unittest.TestCase):
     def setUp(self):
+        core.init()
         atom = core.Atom(
             symbol="Ge",
             config_groups=core.ConfigGroups(base="1*2 2*8", max_n=3),
@@ -95,11 +97,11 @@ class TestTransition(unittest.TestCase):
     def test_get_population(self):
         expected = {"lower": 0.00056, "upper": 0.00295}
         populations = self.transition.get_populations(
-            temperature=900,
-            electron_density=1e20
+            temperatures=900,
+            electron_densities=1e20
         )
-        self.assertAlmostEqual(expected['lower'], populations['lower'], places=4)
-        self.assertAlmostEqual(expected['upper'], populations['upper'], places=4)
+        self.assertAlmostEqual(expected['lower'], populations['lower']["population"][0], places=4)
+        self.assertAlmostEqual(expected['upper'], populations['upper']["population"][0], places=4)
 
 
 class TestEnergyLevel(unittest.TestCase):

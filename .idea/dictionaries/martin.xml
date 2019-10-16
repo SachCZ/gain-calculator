@@ -2,6 +2,7 @@
   <dictionary name="martin">
     <words>
       <w>cvar</w>
+      <w>ndarray</w>
       <w>nonrelativistic</w>
     </words>
   </dictionary>
