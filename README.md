@@ -30,4 +30,19 @@ To install the package simply run:
 
 The usage of this package is demonstrated with following example:
 
+```python
+import gain_calculator as gc
+
+atom = gc.Atom(
+    symbol="Ge",
+    config_groups=gc.ConfigGroups(base="1*2 2*8", max_n=3),
+)
+
+print atom.get_combined_populations(
+    energy_level=gc.EnergyLevel("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4"),
+    temperatures=900,
+    electron_densities=1e20,
+)["population"][0]
+```
+
 To get started or to see more examples please refer to the [documentation]().

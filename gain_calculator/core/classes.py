@@ -377,7 +377,7 @@ class EnergyLevel:
     :param str config: A sequence of terms separated by space each representing single shell in jj coupling
         notation. A shell 5p+3(1)2 has principal quantum number :math:`n=5`, orbital quantum number :math:`l = p`.
         There are three electrons in this shell. The number in brackets is 2 times the total
-        angular momentum :math:`2J`. Here :math:`2J` is 2 hence :math:`J` is :math:`\\frac{1}{2}`.
+        angular momentum :math:`2J`. Here :math:`2J` is 1 hence :math:`J` is :math:`\\frac{1}{2}`.
         The last number is 2 times total angular momentum when taking into account all previous
         shells here it is 2 meaning total angular momentum of the whole configuration up to this shell is 1.
 

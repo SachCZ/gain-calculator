@@ -20,13 +20,13 @@ sys.path.insert(0, u'/home/martin/PycharmProjects/GainCalculator')
 # -- Project information -----------------------------------------------------
 
 project = u'GainCalculator'
-copyright = u'2019, Author'
-author = u'Author'
+copyright = u'2019, Martin Šach'
+author = u'Martin Šach'
 
 # The short X.Y version
-version = u''
+version = u'0.1'
 # The full version, including alpha/beta/rc tags
-release = u''
+release = u'0.1 alpha'
 
 
 # -- General configuration ---------------------------------------------------

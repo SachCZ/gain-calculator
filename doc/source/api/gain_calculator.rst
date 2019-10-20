@@ -1,5 +1,12 @@
-gain\_calculator
-================
+.. _developer-api:
+
+Developer API
+=============
+
+Developer API is incomplete.
+
+gain_calculator
+---------------
 
 .. automodule:: gain_calculator
     :members:
