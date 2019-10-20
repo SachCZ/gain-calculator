@@ -1,3 +1,5 @@
+.. _API:
+
 API
 ===
 This document is the full description of user API. It should serve as a reference for anyone using the GainCalculator.
@@ -12,7 +14,7 @@ The API consists of several classes listed below:
 .. autoclass:: gain_calculator.EnergyLevel
 
 .. autoclass:: gain_calculator.Atom
-    :members: get_populations
+    :members: get_populations, get_combined_populations
 
 .. autoclass:: gain_calculator.ConfigGroups
 

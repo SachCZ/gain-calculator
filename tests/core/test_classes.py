@@ -68,7 +68,7 @@ class TestAtom(unittest.TestCase):
         del self.atom
 
     def test_get_population(self):
-        self.assertAlmostEqual(0.0071, self.atom.get_populations(
+        self.assertAlmostEqual(0.0071, self.atom.get_combined_populations(
             energy_level=core.EnergyLevel("1s+2(0)0 2s+2(0)0 2p-2(0)0 2p+3(3)3 3s+1(1)4"),
             temperatures=900,
             electron_densities=1e20,
