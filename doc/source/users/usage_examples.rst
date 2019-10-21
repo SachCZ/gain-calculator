@@ -32,12 +32,14 @@ must initialize it, this initializes the ray parallelization library::
 
 Then you should setup the atom and energy level. The calculation must be done for all energy levels in the atom so
 here you specify energy levels up to which shell you want to include. This is given by the parameter config_groups of
-Atom::
+Atom. Results that depend only on atom type are stored in folder given by argument data_folder. Next time the
+calculation is performed these will be loaded::
 
     energy_level = gc.EnergyLevel("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(0)1 3p-1(1)0")
     atom = gc.Atom(
         symbol="Ge",
-        config_groups=gc.ConfigGroups(base="1*2 2*8", max_n=6)
+        config_groups=gc.ConfigGroups(base="1*2 2*8", max_n=6),
+        data_folder=os.path.join(os.path.abspath(os.path.dirname(__file__)), "atomic_data")
     )
 
 Next to calculate get the relative population you should use the method atom.get_combined_populations(),

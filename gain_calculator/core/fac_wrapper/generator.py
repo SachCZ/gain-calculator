@@ -5,13 +5,13 @@ import itertools
 from multiprocessing import Process, Queue
 
 
-def __generate_files(queue, atom):
-    queue.put(Generator(atom).get_files())
+def __generate_files(queue, atom, fac_temp_folder):
+    queue.put(Generator(atom, fac_temp_folder).get_files())
 
 
-def generate_files(atom):
+def generate_files(atom, fac_temp_folder):
     queue = Queue()
-    process = Process(target=__generate_files, args=(queue, atom))
+    process = Process(target=__generate_files, args=(queue, atom, fac_temp_folder))
     process.start()
     process.join()
     return queue.get()
@@ -48,17 +48,14 @@ class Generator:
     :ivar Atom atom: atom instance to generate files for
     """
 
-    def __init__(self, atom):
+    def __init__(self, atom, fac_temp_folder):
         """
         Initialize the Parser using an atom with given maximal principal quantum number (n)
         :param atom: Atom instance
         """
 
-        # This monstrosity is here because FAC allocates 1.6 GB of memory when imported
-        self.fac = importlib.import_module("pfac.fac")
-
-        self.__initialize_fac()
         self.__atom = atom
+        self.__fac_temp_folder = fac_temp_folder
 
         if self.__is_serialized():
             self.__init_from_cache()
@@ -68,8 +65,6 @@ class Generator:
     def get_files(self):
         # TODO check everything is allright and ready to go
         return self.__files
-
-    __fac_temp_folder = os.path.join(os.path.abspath(os.path.dirname(__file__)), "fac_temp")
 
     def __generate_structure(self, groups):
         self.fac.Structure(self.__files.levels_binary_filename, self.__files.hamiltonian_binary_filename, groups)
@@ -110,6 +105,11 @@ class Generator:
         self.fac.Reinit(0)
 
     def __init(self):
+        # This monstrosity is here because FAC allocates 1.6 GB of memory when imported
+        self.fac = importlib.import_module("pfac.fac")
+
+        self.__initialize_fac()
+
         self.__dir_name = self.__create_dir()
         self.__init_filenames()
         self.__generate_files()
@@ -139,7 +139,7 @@ class Generator:
         )
 
     def __get_dir_name(self):
-        return "-".join([str(self.__atom), str(self.__atom.config_groups.get_max_n())])
+        return " up to n=".join([str(self.__atom), str(self.__atom.config_groups.get_max_n())])
 
     @staticmethod
     def __generate_group_combinations(config_groups):
@@ -159,4 +159,7 @@ class Generator:
         self.__init_filenames()
 
     def __is_serialized(self):
-        return self.__get_dir_name() in os.listdir(self.__fac_temp_folder)
+        try:
+            return self.__get_dir_name() in os.listdir(self.__fac_temp_folder)
+        except OSError:
+            return False

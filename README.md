@@ -14,16 +14,16 @@ install the Flexible Atomic Code with Python interface pfac.
 
 You can check that pfac is installed successfully using those commands:
 ```
-    python -c "import pfac"
-    echo $?
-    # should print 0
+python -c "import pfac"
+echo $?
+# should print 0
 ```
 
 
 ## Install
 To install the package simply run:
 ```bash
-    pip install gain_calculator
+pip install gain_calculator
 ```
 
 ## Usage

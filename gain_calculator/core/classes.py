@@ -111,21 +111,24 @@ class Atom:
             config_groups=ConfigGroups(
                 base="1*2 2*8",
                 max_n=4
-            )
+            ),
+            data_folder = "./data"
         )
 
     :param str symbol: A symbol of the element, eg. "Ge" for germanium
     :param ConfigGroups config_groups: Instance of class ConfigGroups representing possible shell configurations.
         For more info see :class:`ConfigGroups`.
+    :param str data_folder: Folder where the atomic data are stored, if it doesnt exist, it will be created
     """
 
-    def __init__(self, symbol, config_groups):  # type: (str, ConfigGroups) -> None
+    def __init__(self, symbol, config_groups, data_folder):  # type: (str, ConfigGroups, str) -> None
         self.symbol = symbol
         self.config_groups = config_groups
         self.electron_count = config_groups.base_group.get_electron_count()
+        self.data_folder = data_folder
 
     def __repr__(self):
-        return " ".join([self.symbol, str(self.config_groups.base_group)])
+        return " ".join([self.symbol, self.config_groups.base_group.config])
 
     @staticmethod
     def __as_array(array_or_number):
@@ -134,7 +137,7 @@ class Atom:
 
     def __get_populations_from_pairs(self, pairs, energy_level, population_total):
         ray_ids = []
-        files = fac_wrapper.generate_files(self)
+        files = fac_wrapper.generate_files(self, self.data_folder)
         for temperature, electron_density in pairs:
             ray_ids.append(self.__get_population_ray_id(
                 files=files,
@@ -449,7 +452,7 @@ class Transition:
         self.lower = lower
         self.upper = upper
         self.atom = atom
-        self.__fac_parser = fac_wrapper.Parser.remote(fac_wrapper.generate_files(atom), atom.electron_count)
+        self.__fac_parser = fac_wrapper.Parser.remote(fac_wrapper.generate_files(atom, atom.data_folder), atom.electron_count)
         self.weighted_oscillator_strength = ray.get(
             self.__fac_parser.get_weighted_oscillator_strength.remote(lower, upper))
 

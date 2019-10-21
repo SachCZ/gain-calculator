@@ -1,3 +1,4 @@
+import os
 import unittest
 import gain_calculator.core as core
 import copy
@@ -24,7 +25,7 @@ class TestShell(unittest.TestCase):
         self.assertEqual("2p+4(0)", str(self.shell))
 
     def test_latex_repr(self):
-        self.assertEqual("$[2p+]^4_0$", self.shell.get_latex_repr())
+        self.assertEqual("[2p+]^4_0", self.shell.get_latex_repr())
 
     def test_equals(self):
         another_shell = copy.deepcopy(self.shell)
@@ -62,6 +63,7 @@ class TestAtom(unittest.TestCase):
         self.atom = core.Atom(
             symbol="Ge",
             config_groups=core.ConfigGroups(base="1*2 2*8", max_n=3),
+            data_folder=os.path.join(os.path.abspath(os.path.dirname(__file__)), "atomic_data")
         )
 
     def tearDown(self):
@@ -81,6 +83,7 @@ class TestTransition(unittest.TestCase):
         atom = core.Atom(
             symbol="Ge",
             config_groups=core.ConfigGroups(base="1*2 2*8", max_n=3),
+            data_folder=os.path.join(os.path.abspath(os.path.dirname(__file__)), "atomic_data")
         )
         self.transition = core.Transition(
             atom=atom,

@@ -1,6 +1,7 @@
 """
 Script to generate relative population graphs showing the state variables dependence
 """
+import os
 import gain_calculator as gc
 from matplotlib import pyplot as plt
 import numpy as np
@@ -12,7 +13,8 @@ if __name__ == "__main__":
     energy_level = gc.EnergyLevel("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(0)1 3p-1(1)0")
     atom = gc.Atom(
         symbol="Ge",
-        config_groups=gc.ConfigGroups(base="1*2 2*8", max_n=6)
+        config_groups=gc.ConfigGroups(base="1*2 2*8", max_n=6),
+        data_folder=os.path.join(os.path.abspath(os.path.dirname(__file__)), "atomic_data")
     )
 
     # The main calculation
