@@ -7,6 +7,8 @@ This Python 2 package is a wrapper around the Flexible Atomic Code -
 calculation of gain based state variables and atomic data provided by
 [FAC](https://github.com/flexible-atomic-code/fac). 
 
+[![Documentation Status](https://readthedocs.org/projects/gain-calculator/badge/?version=latest)](https://gain-calculator.readthedocs.io/en/latest/?badge=latest)
+
 ## Dependencies
 A dependency that is not installed during the installation of this package is the
 [FAC](https://github.com/flexible-atomic-code/fac). Before using this package please

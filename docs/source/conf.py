@@ -14,7 +14,7 @@
 #
 import os
 import sys
-sys.path.insert(0, u'/home/martin/PycharmProjects/GainCalculator')
+sys.path.insert(0, os.path.abspath(u'../../.'))
 
 
 # -- Project information -----------------------------------------------------
