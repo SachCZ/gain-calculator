@@ -5,7 +5,6 @@ import re
 import os
 import uuid
 import ray
-import gain_calculator
 from pfac import crm
 import generator
 
