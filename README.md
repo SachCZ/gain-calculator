@@ -45,4 +45,4 @@ print atom.get_combined_populations(
 )["population"][0]
 ```
 
-To get started or to see more examples please refer to the [documentation]().
+To get started or to see more examples please refer to the [documentation](https://gain-calculator.readthedocs.io/).
