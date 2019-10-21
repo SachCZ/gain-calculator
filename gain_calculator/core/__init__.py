@@ -2,11 +2,11 @@
 The core module defining the basic abstractions
 """
 
-from classes import EnergyLevel
-from classes import Shell
-from classes import LevelTerm
-from classes import Transition
-from classes import Atom
-from classes import ConfigGroups
-from classes import ConfigGroup
-from classes import init
+from gain_calculator.core.classes import EnergyLevel
+from gain_calculator.core.classes import Shell
+from gain_calculator.core.classes import LevelTerm
+from gain_calculator.core.classes import Transition
+from gain_calculator.core.classes import Atom
+from gain_calculator.core.classes import ConfigGroups
+from gain_calculator.core.classes import ConfigGroup
+from gain_calculator.core.classes import init
