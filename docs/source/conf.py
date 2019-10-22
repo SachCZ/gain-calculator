@@ -45,6 +45,9 @@ extensions = [
     'sphinx_rtd_theme',
 ]
 
+# Mock autodoc imports
+autodoc_mock_imports = ["pfac"]
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
