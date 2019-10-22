@@ -9,7 +9,7 @@ import numpy as np
 import itertools
 import ray
 import typing
-import gain_calculator.core.fac_wrapper as fac_wrapper
+from gain_calculator.core import fac_wrapper
 
 
 def init():
