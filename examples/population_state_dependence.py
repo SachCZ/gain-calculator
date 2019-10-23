@@ -1,6 +1,7 @@
 """
 Script to generate relative population graphs showing the state variables dependence
 """
+import logging
 import os
 import gain_calculator as gc
 from matplotlib import pyplot as plt
@@ -9,7 +10,7 @@ import numpy as np
 if __name__ == "__main__":
 
     # Setup
-    gc.init()
+    gc.init(logging_handler=logging.StreamHandler())
     energy_level = gc.EnergyLevel("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(0)1 3p-1(1)0")
     atom = gc.Atom(
         symbol="Ge",

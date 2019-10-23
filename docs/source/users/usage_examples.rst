@@ -28,7 +28,7 @@ First you should specify the appropriate imports. In this example we will use th
 Before you do anything with GainCalculator you
 must initialize it, this initializes the ray parallelization library::
 
-    gc.init()
+    gc.init(logging_handler=logging.StreamHandler())
 
 Then you should setup the atom and energy level. The calculation must be done for all energy levels in the atom so
 here you specify energy levels up to which shell you want to include. This is given by the parameter config_groups of

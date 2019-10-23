@@ -4,6 +4,7 @@ A convention is used that principal quantum number is denoted n and orbital quan
 this in mind.
 """
 import logging
+import os
 import re
 
 import numpy as np
@@ -13,14 +14,18 @@ import typing
 from gain_calculator.core import fac_wrapper
 
 
-def init():
+def init(logging_handler=logging.FileHandler(os.devnull)):
     """
     Must be called anytime you want to use gain_calculator, preferably in main calling script
     """
     logging.basicConfig(level=logging.INFO)
+    ray_logger = logging.getLogger('ray')
+    ray_logger.addHandler(logging_handler)
+    ray_logger.propagate = False
 
     if not ray.is_initialized():
-        ray.init()
+        ray.init(configure_logging=False)
+    pass
 
 
 class ConfigGroup:
