@@ -50,11 +50,12 @@ you could specify the sum of all populations using the parameter population_tota
     population_values = atom.get_combined_populations(
         energy_level=energy_level,
         temperatures=temperatures,
-        electron_densities=np.logspace(20, 23)
+        electron_densities=np.logspace(20, 23),
+        log=lambda current, total: gc.print_progress(current, total, "Generating populations:")
     )
 
 The calculation will run in parallel using ray workers. The result will be a numpy structured list with three fields:
-**population**, **electron_density** and **temperature**.
+**population**, **electron_density** and **temperature**. The progress will be logged using the log optional parameter.
 
 To visualize the data use a simple for loop. Simply mask out the data for temperatures you dont want and store the
 new list in a variable called relevant. Then plot the dependency of reduced population on density utilizing x axis

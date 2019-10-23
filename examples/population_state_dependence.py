@@ -22,7 +22,8 @@ if __name__ == "__main__":
     population_values = atom.get_combined_populations(
         energy_level=energy_level,
         temperatures=temperatures,
-        electron_densities=np.logspace(20, 23)
+        electron_densities=np.logspace(20, 23),
+        log=lambda current, total: gc.print_progress(current, total, "Generating populations:")
     )
 
     # Plotting

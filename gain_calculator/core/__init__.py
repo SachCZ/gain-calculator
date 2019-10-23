@@ -10,3 +10,4 @@ from gain_calculator.core.classes import Atom
 from gain_calculator.core.classes import ConfigGroups
 from gain_calculator.core.classes import ConfigGroup
 from gain_calculator.core.classes import init
+from gain_calculator.core.utility import print_progress

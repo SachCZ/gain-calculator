@@ -20,3 +20,5 @@ The API consists of several classes listed below:
 
 .. autoclass:: gain_calculator.Transition
     :members: get_populations
+
+.. autofunction:: gain_calculator.print_progress

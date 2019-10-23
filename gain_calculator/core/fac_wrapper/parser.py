@@ -8,6 +8,8 @@ import ray
 from pfac import crm
 import generator
 
+from gain_calculator.core import utility
+
 
 @ray.remote(num_cpus=1)
 class Parser(object):
@@ -28,7 +30,8 @@ class Parser(object):
         """
 
         self.__choose_population_filenames()
-        self.__generate_populations(temperature=temperature, density=density, population_total=population_total)
+        with utility.no_stdout():
+            self.__generate_populations(temperature=temperature, density=density, population_total=population_total)
         populations = self.__parse_population_file()
         self.__clean_population_files()
         return populations
@@ -43,17 +46,15 @@ class Parser(object):
         """
         return self.__parse_oscillator_strength(lower, upper)
 
-    def __get_level_index(self, energy_level):  # type: (classes.EnergyLevel) -> int
+    def __get_level_index(self, energy_level):
         return self.levels[energy_level.get_fac_repr()]
 
     def __indexes_match(self, lower_index, upper_index, lower_level, upper_level):
-        #  type: (int, int, classes.EnergyLevel, classes.EnergyLevel) -> bool
         lower = self.__get_level_index(lower_level)
         upper = self.__get_level_index(upper_level)
         return lower == lower_index and upper == upper_index
 
     def __parse_oscillator_strength(self, lower_level, upper_level):
-        # type: (classes.EnergyLevel, classes.EnergyLevel) -> float
         for lower_index, upper_index, strength in self.transitions:
             if self.__indexes_match(lower_index, upper_index, lower_level, upper_level):
                 return strength
@@ -61,7 +62,7 @@ class Parser(object):
         raise Exception("Failed to find transition!")
 
     def __parse_levels_file(self):
-        def __parse_line(line):  # type: (str) -> (int, str)
+        def __parse_line(line):
             match = re.search(r"\s+(?P<index>\d+)\s+\S+\s+\S+\s+\d+\s+\d+\s+\d+\s+\S+\s+\S+\s+(?P<name>\S+)", line)
             if match is None:
                 return None
@@ -129,7 +130,6 @@ class Parser(object):
             return {index: population for index, population in populations}
 
     def get_population(self, energy_level, temperature, density, population_total):
-        #  type: (classes.EnergyLevel, float, float, float) -> float
         """
         Calculate population of a single energy level at given temperature density with population total stating
         the sum of all energy levels.
