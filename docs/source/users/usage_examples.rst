@@ -26,7 +26,8 @@ First you should specify the appropriate imports. In this example we will use th
     import numpy as np
 
 Before you do anything with GainCalculator you
-must initialize it, this initializes the ray parallelization library::
+must initialize it, this initializes the ray parallelization library, provide it with custom logging handler to
+handle logs (it will dump all logs to os.devnull by default)::
 
     gc.init(logging_handler=logging.StreamHandler())
 
@@ -78,6 +79,8 @@ Lastly set the properties of the plot and save the figure::
 
 To wrap up here is the complete source code of the example::
 
+    import logging
+    import os
     import gain_calculator as gc
     from matplotlib import pyplot as plt
     import numpy as np
@@ -85,19 +88,21 @@ To wrap up here is the complete source code of the example::
     if __name__ == "__main__":
 
         # Setup
-        gc.init()
+        gc.init(logging_handler=logging.StreamHandler())
         energy_level = gc.EnergyLevel("1s+2(0)0 2s+2(0)0 2p-1(1)1 2p+4(0)1 3p-1(1)0")
         atom = gc.Atom(
             symbol="Ge",
-            config_groups=gc.ConfigGroups(base="1*2 2*8", max_n=6)
+            config_groups=gc.ConfigGroups(base="1*2 2*8", max_n=6),
+            data_folder=os.path.join(os.path.abspath(os.path.dirname(__file__)), "atomic_data")
         )
 
         # The main calculation
         temperatures = [650.0, 850.0, 1050.0, 1250.0, 1450.0, 1650.0, 1850.0]
-        population_values = atom.get_populations(
+        population_values = atom.get_combined_populations(
             energy_level=energy_level,
             temperatures=temperatures,
-            electron_densities=np.logspace(20, 23)
+            electron_densities=np.logspace(20, 23),
+            log=lambda current, total: gc.print_progress(current, total, "Generating populations:")
         )
 
         # Plotting

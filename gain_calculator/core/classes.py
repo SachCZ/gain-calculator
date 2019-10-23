@@ -18,7 +18,6 @@ def init(logging_handler=logging.FileHandler(os.devnull)):
     """
     Must be called anytime you want to use gain_calculator, preferably in main calling script
     """
-    logging.basicConfig(level=logging.INFO)
     ray_logger = logging.getLogger('ray')
     ray_logger.addHandler(logging_handler)
     ray_logger.propagate = False
