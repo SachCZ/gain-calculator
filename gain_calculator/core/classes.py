@@ -474,8 +474,11 @@ class Transition:
         self.weighted_oscillator_strength = ray.get(
             self.__fac_parser.get_weighted_oscillator_strength.remote(lower, upper))
 
-    def get_populations(self, temperatures, electron_densities, population_total=1.0):
-        # type: (float, float, float) -> {"lower": float, "upper": float}
+        self.energy = ray.get(
+            self.__fac_parser.get_transition_energy.remote(lower, upper))
+
+    def get_populations(self, temperatures, electron_densities, combine=itertools.product, population_total=1.0,
+                        log=None):
         """
         Simple convenience wrapper around
         :func:`EnergyLevel.get_population`
@@ -484,10 +487,32 @@ class Transition:
 
         :param ndarray temperatures: temperature in eV
         :param ndarray electron_densities: electron density in cm^-3
+        :param combine: the way to combine densities and temperatures, default is zip
         :param float population_total: 1 by default
         :return: a dict with two keys: {upper: ..., lower: ...} - the values are numpy structured arrays
             with fields **temperature**, **electron_density** and **population**
         """
+        lower_populations = self.atom.get_populations(
+            self.lower,
+            temperatures,
+            electron_densities,
+            combine,
+            population_total,
+            log=lambda current, total: log(current, total * 2) if log else None
+        )
+        lower_populations["population"] = lower_populations["population"] / self.lower.degeneracy
+
+        upper_populations = self.atom.get_populations(
+            self.upper,
+            temperatures,
+            electron_densities,
+            combine,
+            population_total,
+            log=lambda current, total: log(total + current, total * 2) if log else None
+        )
+        upper_populations["population"] = upper_populations["population"] / self.upper.degeneracy
+
         return {
-            "lower": self.atom.get_combined_populations(self.lower, temperatures, electron_densities, population_total),
-            "upper": self.atom.get_combined_populations(self.upper, temperatures, electron_densities, population_total)}
+            "lower": lower_populations,
+            "upper": upper_populations
+        }

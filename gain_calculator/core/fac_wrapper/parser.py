@@ -46,6 +46,16 @@ class Parser(object):
         """
         return self.__parse_oscillator_strength(lower, upper)
 
+    def get_transition_energy(self, lower, upper):
+        # type: (classes.EnergyLevel, classes.EnergyLevel) -> float
+        """
+        Calculate the transition energy between two energy levels
+        :param lower: lower EnergyLevel instance
+        :param upper: upper EnergyLevel instance
+        :return: transition energy value
+        """
+        return self.__parse_transition_energy(lower, upper)
+
     def __get_level_index(self, energy_level):
         return self.levels[energy_level.get_fac_repr()]
 
@@ -55,9 +65,16 @@ class Parser(object):
         return lower == lower_index and upper == upper_index
 
     def __parse_oscillator_strength(self, lower_level, upper_level):
-        for lower_index, upper_index, strength in self.transitions:
+        for lower_index, upper_index, energy, strength in self.transitions:
             if self.__indexes_match(lower_index, upper_index, lower_level, upper_level):
                 return strength
+
+        raise Exception("Failed to find transition!")
+
+    def __parse_transition_energy(self, lower_level, upper_level):
+        for lower_index, upper_index, energy, strength in self.transitions:
+            if self.__indexes_match(lower_index, upper_index, lower_level, upper_level):
+                return energy
 
         raise Exception("Failed to find transition!")
 
@@ -76,11 +93,12 @@ class Parser(object):
     def __parse_transitions_file(self):
         def __parse_line(line):
             match = re.search(
-                r"\s*(?P<upper_index>\d+)\s+\d+\s+(?P<lower_index>\d+)\s+\d+\s+\S+\s+(?P<strength>\S+)",
+                r"\s*(?P<upper_index>\d+)\s+\d+\s+(?P<lower_index>\d+)\s+\d+\s+(?P<energy>\S+)\s+(?P<strength>\S+)",
                 line)
             if match is None:
                 return None
-            return int(match.group('lower_index')), int(match.group('upper_index')), float(match.group('strength'))
+            return int(match.group('lower_index')), int(match.group('upper_index')), float(
+                match.group('energy')), float(match.group('strength'))
 
         with open(self.__files.transitions_filename, 'r') as f:
             transitions = filter(None, map(__parse_line, f.readlines()))

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="gain-calculator",
-    version="0.0.1",
+    version="0.0.5",
     author="Martin Sach",
     author_email="martin.sachin@gmail.com",
     description="A package providing a wrapper around Flexible Atomic Code specifically for gain predictions.",
@@ -19,4 +19,9 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=2.7',
+    install_requires=[
+        "numpy",
+        "ray",
+        "typing"
+    ]
 )

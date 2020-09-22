@@ -35,7 +35,7 @@ if __name__ == "__main__":
         plt.semilogx(densities, populations, label=u"$T_e = {}$ eV".format(temperature))
 
     plt.xlabel(u"$n_e$ [cm$^{-3}$]")
-    plt.ylabel(u"$\\frac{N_i}{N}$ [-]")
+    plt.ylabel(u"${N}$ [%]")
     plt.grid()
     plt.legend()
     plt.tight_layout()
